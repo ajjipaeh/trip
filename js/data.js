@@ -10,10 +10,10 @@ const tripsData = [
     },
     {
         id: 2,
-        title: "เขาใหญ่ ลุยป่า",
-        date: "15-17 พฤศจิกายน 2569",
-        location: "เขาใหญ่, นครราชสีมา",
-        image: "https://images.unsplash.com/photo-1549740425-5e9ed4d8cd34?auto=format&fit=crop&w=600&q=80", 
+        title: "พูลวิลล่า ปาร์ตี้",
+        date: "7 พฤศจิกายน 2569",
+        location: "เขาใหญ่",
+        image: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=600&q=80",
         status: "upcoming",
         // ข้อมูลเส้นทางที่ปรับใหม่ มีพิกัดและลิงก์ Google Maps
         route: [
@@ -61,10 +61,10 @@ const tripsData = [
     },
     {
         id: 3,
-        title: "พูลวิลล่า ปาร์ตี้",
-        date: "25-26 ธันวาคม 2569",
-        location: "หัวหิน, ประจวบคีรีขันธ์",
-        image: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=600&q=80", 
+        title: "เกาะสีชัง",
+        date: "9-11 มกราคม 2570",
+        location: "ชลบุรี",
+        image: "https://i0.wp.com/widsawa.com/wp-content/uploads/2019/02/img_2645.jpg?fit=720%2C479&ssl=1",  
         status: "future", // อนาคต
     },
     {
