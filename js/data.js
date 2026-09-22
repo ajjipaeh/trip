@@ -2,6 +2,14 @@
 const tripsData = [
     {
         id: 1,
+        title: "ทริปหัวหิน",
+        date: "21-24 กรกฏาคม 2569",
+        location: "ประจวบคีรีขันธ์",
+        image: "https://images.unsplash.com/photo-1596525164222-385501bf00d7?auto=format&fit=crop&w=600&q=80", 
+        status: "past", // ผ่านไปแล้ว
+    },
+    {
+        id: 2,
         title: "ทริปพัทยา",
         date: "10-12 สิงหาคม 2569",
         location: "พัทยา, ชลบุรี",
@@ -9,7 +17,7 @@ const tripsData = [
         status: "past", // ผ่านไปแล้ว
     },
     {
-        id: 2,
+        id: 3,
         title: "พูลวิลล่า เขาใหญ่",
         date: "7 พฤศจิกายน 2569",
         location: "เขาใหญ่",
@@ -61,7 +69,7 @@ const tripsData = [
         ]
     },
     {
-        id: 3,
+        id: 4,
         title: "เกาะสีชัง",
         date: "9-11 มกราคม 2570",
         location: "ชลบุรี",
@@ -69,7 +77,7 @@ const tripsData = [
         status: "future", // อนาคต
     },
     {
-        id: 4,
+        id: 5,
         title: "ตะลุยหิมะ ญี่ปุ่น",
         date: "10-15 กุมภาพันธ์ 2570",
         location: "ฮอกไกโด, ญี่ปุ่น",
