@@ -1,18 +1,20 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // --- ระบบ Carousel หน้าทริปของเรา ---
     const carouselContainer = document.getElementById('trip-carousel');
 
+    // ตรวจสอบว่ามีข้อมูลจาก data.js หรือไม่
     if (typeof tripsData !== 'undefined' && carouselContainer) {
         
-        // 1. สร้าง Slide ยัดลงใน Swiper
+        // 1. สร้างการ์ดจากข้อมูล
         tripsData.forEach(trip => {
-            const slide = document.createElement('div');
-            // ใส่คลาส swiper-slide เป็นข้อบังคับของไลบรารี
-            slide.className = `swiper-slide status-${trip.status}`;
+            const card = document.createElement('div');
+            card.className = `trip-card status-${trip.status}`;
             
+            // กำหนดข้อความป้ายกำกับ
             let badgeText = trip.status === 'past' ? 'ผ่านมาแล้ว' : 
                             trip.status === 'upcoming' ? 'กำลังจะถึง' : 'แพลนอนาคต';
 
-            slide.innerHTML = `
+            card.innerHTML = `
                 <div class="card-bg" style="background-image: url('${trip.image}')"></div>
                 <div class="card-overlay"></div>
                 <div class="badge-status">${badgeText}</div>
@@ -24,37 +26,50 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
             `;
-            carouselContainer.appendChild(slide);
+            
+            carouselContainer.appendChild(card);
 
-            // 2. จับ Event คลิกการ์ด
-            slide.addEventListener('click', () => {
-                // เช็คว่าการ์ดนี้ active อยู่หรือไม่
-                if (slide.classList.contains('swiper-slide-active') && trip.status !== 'past') {
+            // 2. จัดการเมื่อกดการ์ด (ในส่วนของ Carousel)
+            card.addEventListener('click', () => {
+                if (card.classList.contains('active-card') && trip.status !== 'past') {
+                    
                     Swal.fire({
-                        title: 'พร้อมลุย!', 
-                        text: `กำลังเปิดแพลน: ${trip.title}`, 
+                        title: 'พร้อมลุย!',
+                        text: `กำลังเปิดแพลน: ${trip.title}`,
                         icon: 'success',
-                        showConfirmButton: false, 
+                        showConfirmButton: false,
                         timer: 1200
                     }).then(() => {
-                        if(typeof openTripDetails === 'function') openTripDetails(trip.id); 
+                        // เดี๋ยวเราจะเรียกฟังก์ชันเปิดหน้ารายละเอียดทริปตรงนี้
+                        openTripDetails(trip.id); 
+                        console.log("ไปหน้ารายละเอียดทริป ID:", trip.id);
                     });
+
+                } else if (!card.classList.contains('active-card')) {
+                    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
             });
         });
 
-        // 3. เริ่มต้นการทำงานของ Swiper
-        const swiper = new Swiper('.trip-swiper', {
-            direction: 'vertical',
-            loop: true,               // วนลูป Infinity!
-            centeredSlides: true,     // ให้ใบที่โฟกัสอยู่ตรงกลางเสมอ
-            slidesPerView: 'auto',    // คำนวณความสูงอัตโนมัติ
-            spaceBetween: 20,         // ระยะห่างระหว่างการ์ด
-            speed: 500,               // ความเร็วตอนแอนิเมชันเลื่อน (ms)
-            slideToClickedSlide: true, // คลิกลูกไหน ลูกนั้นเด้งมาตรงกลางให้เลย!
-            mousewheel: true,          // เลื่อนด้วย Mouse Wheel ได้
-            observer: true,
-            observeParents: true
-        });
+        // 3. ใช้ IntersectionObserver เพื่อตรวจจับว่าการ์ดไหนอยู่ "ตรงกลางจอ"
+        // โดยตั้ง rootMargin ให้โฟกัสเฉพาะเส้นตรงกลาง
+        const observerOptions = {
+            root: carouselContainer,
+            rootMargin: '-45% 0px -45% 0px', 
+            threshold: 0
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active-card');
+                } else {
+                    entry.target.classList.remove('active-card');
+                }
+            });
+        }, observerOptions);
+
+        // ให้ observer สังเกตการณ์การ์ดทุกใบ
+        document.querySelectorAll('.trip-card').forEach(card => observer.observe(card));
     }
-});
+})
