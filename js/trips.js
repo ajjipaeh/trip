@@ -52,7 +52,9 @@ document.addEventListener('DOMContentLoaded', () => {
             spaceBetween: 20,         // ระยะห่างระหว่างการ์ด
             speed: 500,               // ความเร็วตอนแอนิเมชันเลื่อน (ms)
             slideToClickedSlide: true, // คลิกลูกไหน ลูกนั้นเด้งมาตรงกลางให้เลย!
-            mousewheel: true
+            mousewheel: true,          // เลื่อนด้วย Mouse Wheel ได้
+            observer: true,
+            observeParents: true
         });
     }
 });
