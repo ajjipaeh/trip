@@ -51,7 +51,8 @@ document.addEventListener('DOMContentLoaded', () => {
             slidesPerView: 'auto',    // คำนวณความสูงอัตโนมัติ
             spaceBetween: 20,         // ระยะห่างระหว่างการ์ด
             speed: 500,               // ความเร็วตอนแอนิเมชันเลื่อน (ms)
-            slideToClickedSlide: true // คลิกลูกไหน ลูกนั้นเด้งมาตรงกลางให้เลย!
+            slideToClickedSlide: true, // คลิกลูกไหน ลูกนั้นเด้งมาตรงกลางให้เลย!
+            mousewheel: true
         });
     }
 });
