@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Trip Planner</title>
+    
+    <!-- Google Fonts Prompt -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+
+    <!-- 1. Splash Screen -->
+    <div id="splash-screen" class="splash-container d-flex flex-column justify-content-center align-items-center text-center">
+        <div class="glass-card p-5 mx-4">
+            <h1 class="display-1 mb-3">✈️</h1>
+            <h2 class="mb-2 fw-bold text-dark">เตรียมตัวให้พร้อม</h2>
+            <p class="text-muted mb-4">สำหรับทริปครั้งนี้ ไปเที่ยวกันเถอะ!</p>
+            
+            <div class="form-floating mb-4">
+                <input type="text" class="form-control glass-input" id="userNameInput" placeholder="ใส่ชื่อของคุณ">
+                <label for="userNameInput">ชื่อของคุณ</label>
+            </div>
+            
+            <button id="btnStart" class="btn btn-ios w-100 fw-bold py-3">เริ่มกันเลย</button>
+        </div>
+    </div>
+
+    <!-- 2. Main App -->
+    <div id="main-app" class="d-none">
+        
+        <!-- พื้นหลังของแอป (ให้มีสีสันหน่อย จะได้เห็น Glassmorphism ชัดๆ) -->
+        <div class="app-background"></div>
+
+        <!-- พื้นที่แสดงเนื้อหาหลัก (มี Padding ด้านล่างไม่ให้โดนเมนูทับ) -->
+        <div class="content-area">
+            
+            <!-- หน้า 1: Dashboard -->
+            <div id="page-dashboard" class="page-section active">
+                <div class="container pt-5 pb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2 class="fw-bold mb-0" id="welcome-text">สวัสดี!</h2>
+                        <button id="btnLogout" class="btn btn-sm btn-outline-danger rounded-pill"><i class="bi bi-box-arrow-right"></i> ออก</button>
+                    </div>
+
+                    <!-- การ์ดนับถอยหลังทริปถัดไป -->
+                    <div class="glass-card p-4 mb-4 text-center">
+                        <h5 class="text-muted mb-3"><i class="bi bi-geo-alt-fill text-danger"></i> ทริปถัดไป: เขาใหญ่</h5>
+                        
+                        <!-- เปลี่ยนจาก gap-3 เป็น gap-2 เพื่อให้เบียดกันนิดนึง และเพิ่ม flex-fill -->
+                        <div class="d-flex justify-content-center gap-2 mb-3">
+                            <div class="countdown-box flex-fill">
+                                <h2 class="mb-0 fw-bold" id="cd-days">--</h2>
+                                <small>วัน</small>
+                            </div>
+                            <div class="countdown-box flex-fill">
+                                <h2 class="mb-0 fw-bold" id="cd-hours">--</h2>
+                                <small>ชม.</small>
+                            </div>
+                            <div class="countdown-box flex-fill">
+                                <h2 class="mb-0 fw-bold" id="cd-minutes">--</h2>
+                                <small>นาที</small>
+                            </div>
+                            <div class="countdown-box flex-fill">
+                                <h2 class="mb-0 fw-bold" id="cd-seconds">--</h2>
+                                <small>วินาที</small>
+                            </div>
+                        </div>
+                        
+                        <p class="mb-0 small fw-bold text-dark">📅 7 พฤศจิกายน 2569</p>
+                    </div>
+
+                    <!-- ข้อมูลด่วน -->
+                    <div class="glass-card p-3 text-start">
+                        <h6 class="fw-bold border-bottom pb-2 mb-3">📌 ข้อมูลนัดหมายด่วน</h6>
+                        <p class="mb-2 small"><i class="bi bi-clock"></i> <strong>เวลา:</strong> 06:00 น. (ล้อหมุน)</p>
+                        <p class="mb-2 small"><i class="bi bi-car-front-fill"></i> <strong>รถ:</strong> คันที่ 1 (เพื่อน Aขับ)</p>
+                        <p class="mb-0 small"><i class="bi bi-cloud-sun-fill text-warning"></i> <strong>อากาศ:</strong> แดดจัด 32°C ☀️</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- หน้า 2: ทริปของเรา -->
+            <div id="page-trips" class="page-section d-none">
+                <div class="carousel-wrapper">
+                    <h3 class="fw-bold text-center mt-4 mb-3">ทริปของเรา 🏕️</h3>
+                    
+                    <!-- พื้นที่ Carousel (รายการการ์ดจะถูกสร้างด้วย JS มาใส่ตรงนี้) -->
+                    <div class="vertical-carousel" id="trip-carousel"></div>
+                </div>
+            </div>
+
+            <!-- หน้า 3: ศูนย์รวมมินิเกม (Hub) -->
+            <div id="page-minigame" class="page-section d-none">
+                <div class="container pt-5 pb-4 text-center">
+                    <h3 class="fw-bold mb-4">มินิเกมปาร์ตี้ 🎮</h3>
+                    
+                    <div class="row px-2">
+                        <!-- เกมที่ 1: วงล้อคู่ -->
+                        <div class="col-12 mb-3">
+                            <div class="glass-card p-3 text-start d-flex align-items-center" onclick="openMiniGame('roulette')" style="cursor: pointer;">
+                                <div class="bg-white p-3 rounded-circle me-3 shadow-sm text-danger" style="font-size: 1.5rem;">
+                                    🎡
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-1">วงล้อคู่หรรษา (Double Spin)</h6>
+                                    <small class="text-muted">สุ่มชื่อคน พร้อมบทลงโทษ!</small>
+                                </div>
+                                <i class="bi bi-chevron-right ms-auto text-muted"></i>
+                            </div>
+                        </div>
+
+                        <!-- เกมที่ 2: เต๋าสั่งลุย -->
+                        <div class="col-12 mb-3">
+                            <div class="glass-card p-3 text-start d-flex align-items-center" onclick="openMiniGame('dice')" style="cursor: pointer;">
+                                <div class="bg-white p-3 rounded-circle me-3 shadow-sm text-primary" style="font-size: 1.5rem;">
+                                    🎲
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-1">เต๋าสั่งลุย (Action Dice)</h6>
+                                    <small class="text-muted">ทอยปุ๊บ ทำตามคำสั่งปั๊บ!</small>
+                                </div>
+                                <i class="bi bi-chevron-right ms-auto text-muted"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- หน้าต่างย่อย: เกมวงล้อคู่ -->
+            <div id="subpage-roulette" class="page-section d-none bg-light" style="position: absolute; top: 0; left: 0; width: 100%; height: 100vh; z-index: 1050; overflow-y: auto;">
+                
+                <div class="ios-header glass-nav d-flex align-items-center px-3 py-3 sticky-top">
+                    <button class="btn btn-link text-decoration-none text-dark p-0 fw-bold" onclick="closeMiniGame()">
+                        <i class="bi bi-chevron-left"></i> กลับ
+                    </button>
+                    <h5 class="mx-auto mb-0 fw-bold">วงล้อคู่</h5>
+                    <div style="width: 50px;"></div>
+                </div>
+
+                <div class="container pb-5 mt-4 text-center">
+                    
+                    <!-- หัวข้อเกม (เปลี่ยนได้) -->
+                    <input type="text" id="roulette-title" class="form-control text-center fw-bold fs-4 mb-3 bg-transparent border-0 shadow-none" value="ใคร จะโดนอะไร?" placeholder="ตั้งชื่อหัวข้อเกม...">
+
+                    <!-- วงล้อ 2 อัน ซ้าย-ขวา -->
+                    <div class="d-flex justify-content-center gap-2 mb-4">
+                        <!-- วงล้อ 1: ชื่อคน -->
+                        <div class="glass-card p-2 position-relative">
+                            <div class="roulette-pointer" style="top: -8px;"></div>
+                            <canvas id="canvas-roulette-1" width="150" height="150"></canvas>
+                        </div>
+                        
+                        <!-- วงล้อ 2: บทลงโทษ -->
+                        <div class="glass-card p-2 position-relative">
+                            <div class="roulette-pointer" style="top: -8px;"></div>
+                            <canvas id="canvas-roulette-2" width="150" height="150"></canvas>
+                        </div>
+                    </div>
+                    
+                    <button id="btn-spin-double" class="btn btn-ios w-75 fw-bold fs-5 py-3 shadow-lg mb-4">หมุนเลย!</button>
+
+                    <!-- ตั้งค่าวงล้อ -->
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="glass-card p-2">
+                                <small class="fw-bold"><i class="bi bi-person"></i> รายชื่อ</small>
+                                <textarea id="roulette-opt-1" class="form-control mt-1 glass-input text-center" rows="4" style="font-size: 0.8rem;">ทราย
+แป๊ะ
+หญิง
+ป๊อป</textarea>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="glass-card p-2">
+                                <small class="fw-bold"><i class="bi bi-lightning-charge"></i> บทลงโทษ</small>
+                                <textarea id="roulette-opt-2" class="form-control mt-1 glass-input text-center" rows="4" style="font-size: 0.8rem;">ยกหมดแก้ว
+จ่ายค่ากาแฟ
+เต้น 1 เพลง
+รอดตัวไป</textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <button id="btn-update-double-wheel" class="btn btn-outline-secondary w-75 rounded-pill mt-3">อัปเดตข้อมูล</button>
+
+                </div>
+            </div>
+
+            <!-- หน้าต่างย่อย: เกมเต๋าสั่งลุย -->
+            <div id="subpage-dice" class="page-section d-none bg-light" style="position: absolute; top: 0; left: 0; width: 100%; height: 100vh; z-index: 1050; overflow-y: auto;">
+                
+                <div class="ios-header glass-nav d-flex align-items-center px-3 py-3 sticky-top">
+                    <button class="btn btn-link text-decoration-none text-dark p-0 fw-bold" onclick="closeMiniGame()">
+                        <i class="bi bi-chevron-left"></i> กลับ
+                    </button>
+                    <h5 class="mx-auto mb-0 fw-bold">เต๋าสั่งลุย</h5>
+                    <div style="width: 50px;"></div>
+                </div>
+
+                <div class="container pb-5 mt-4 text-center">
+                    
+                    <!-- ลูกเต๋า -->
+                    <div class="d-flex justify-content-center mb-4 mt-2">
+                        <div id="dice-display" class="glass-card d-flex align-items-center justify-content-center shadow-lg" style="width: 130px; height: 130px; border-radius: 35px;">
+                            <i id="dice-icon" class="bi bi-dice-6-fill" style="font-size: 6rem; color: var(--color-4);"></i>
+                        </div>
+                    </div>
+                    
+                    <button id="btn-roll-dice" class="btn btn-ios w-75 fw-bold fs-5 py-3 shadow-lg mb-4">ทอยเต๋า!</button>
+
+                    <!-- ตั้งค่าคำสั่งของแต่ละแต้ม -->
+                    <div class="glass-card p-3 text-start mx-auto">
+                        <h6 class="fw-bold mb-3"><i class="bi bi-list-task"></i> ตั้งค่าคำสั่ง (แต้ม 1-6)</h6>
+                        
+                        <div class="input-group input-group-sm mb-2">
+                            <span class="input-group-text bg-white fw-bold">⚀ 1</span>
+                            <input type="text" class="form-control dice-rule" data-dice="1" value="รอดตัวไป!">
+                        </div>
+                        <div class="input-group input-group-sm mb-2">
+                            <span class="input-group-text bg-white fw-bold">⚁ 2</span>
+                            <input type="text" class="form-control dice-rule" data-dice="2" value="ดื่ม 1 อึก">
+                        </div>
+                        <div class="input-group input-group-sm mb-2">
+                            <span class="input-group-text bg-white fw-bold">⚂ 3</span>
+                            <input type="text" class="form-control dice-rule" data-dice="3" value="เลือกคนดื่มแทน 1 คน">
+                        </div>
+                        <div class="input-group input-group-sm mb-2">
+                            <span class="input-group-text bg-white fw-bold">⚃ 4</span>
+                            <input type="text" class="form-control dice-rule" data-dice="4" value="เลี้ยงขนมพรุ่งนี้">
+                        </div>
+                        <div class="input-group input-group-sm mb-2">
+                            <span class="input-group-text bg-white fw-bold">⚄ 5</span>
+                            <input type="text" class="form-control dice-rule" data-dice="5" value="เล่าความลับ 1 เรื่อง">
+                        </div>
+                        <div class="input-group input-group-sm mb-2">
+                            <span class="input-group-text bg-white fw-bold">⚅ 6</span>
+                            <input type="text" class="form-control dice-rule" data-dice="6" value="หมดแก้ว!! 🍻">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- หน้า 4: รายละเอียดทริป (Trip Details) -->
+            <div id="page-trip-details" class="page-section d-none bg-light">
+                
+                <!-- Header แบบ iOS -->
+                <div class="ios-header glass-nav d-flex align-items-center px-3 py-3 sticky-top">
+                    <button id="btn-back-trips" class="btn btn-link text-decoration-none text-dark p-0 fw-bold">
+                        <i class="bi bi-chevron-left"></i> กลับ
+                    </button>
+                    <h5 class="mx-auto mb-0 fw-bold" id="detail-title">รายละเอียดทริป</h5>
+                    <div style="width: 50px;"></div> <!-- Spacer ให้สมดุล -->
+                </div>
+
+                <!-- Cover Image -->
+                <div id="detail-cover" class="detail-cover"></div>
+
+                <div class="container pb-5 mt-4">
+                    
+                    <!-- ส่วนแผนที่พรีวิว (Leaflet) -->
+                    <div class="glass-card p-2 mb-4">
+                        <div id="preview-map" class="shadow-sm rounded-4" style="height: 250px; z-index: 1;"></div>
+                        <p class="text-center text-muted small mt-2 mb-0"><i class="bi bi-info-circle"></i> กดที่ปุ่มในกำหนดการเพื่อดูตำแหน่ง</p>
+                    </div>
+
+                    <!-- Simulator เครื่องคิดเลขเวลา -->
+                    <div class="glass-card p-3 mb-4">
+                        <h6 class="fw-bold mb-3"><i class="bi bi-stopwatch"></i> จำลองเวลาเดินทาง</h6>
+                        
+                        <div class="d-flex gap-2 mb-3">
+                            <input type="radio" class="btn-check" name="timeMode" id="mode-start" value="start" checked>
+                            <label class="btn btn-outline-danger btn-sm flex-grow-1 rounded-pill" for="mode-start">เวลาออกเดินทาง</label>
+
+                            <input type="radio" class="btn-check" name="timeMode" id="mode-end" value="end">
+                            <label class="btn btn-outline-danger btn-sm flex-grow-1 rounded-pill" for="mode-end">อยากไปถึงเวลา</label>
+                        </div>
+                        
+                        <div class="d-flex align-items-center gap-3">
+                            <input type="time" id="simulator-time" class="form-control rounded-pill text-center fw-bold" value="06:00">
+                            <button id="btn-calculate-time" class="btn btn-ios w-50">คำนวณ</button>
+                        </div>
+                    </div>
+
+                    <!-- Timeline เส้นทาง -->
+                    <h6 class="fw-bold mb-3 px-2">📍 เส้นทางและจุดแวะพัก</h6>
+                    <div id="timeline-container" class="timeline-wrapper px-2">
+                        <!-- JS จะสร้าง Timeline มาใส่ตรงนี้ -->
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <!-- แถบเมนูด้านล่าง (Bottom Navigation) -->
+        <nav class="bottom-nav glass-nav">
+            <div class="nav-item active" data-target="page-dashboard">
+                <i class="bi bi-house-door-fill"></i>
+                <span>หน้าหลัก</span>
+            </div>
+            <div class="nav-item" data-target="page-trips">
+                <i class="bi bi-images"></i>
+                <span>ทริปของเรา</span>
+            </div>
+            <div class="nav-item" data-target="page-minigame">
+                <i class="bi bi-controller"></i>
+                <span>มินิเกม</span>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- data js -->
+    <script src="js/data.js"></script>
+    <!-- mune js -->
+     <script src="js/dashboard.js"></script>
+    <script src="js/trips.js"></script>
+    <script src="js/tripDetails.js"></script>
+    <script src="js/minigame.js"></script>
+    <!-- Custom JS -->
+    <script src="js/app.js"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</body>
+</html>
