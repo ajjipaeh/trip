@@ -2,7 +2,7 @@
 const tripsData = [
     {
         id: 1,
-        title: "ทริปพัทยา ฮาเฮ",
+        title: "ทริปพัทยา",
         date: "10-12 สิงหาคม 2569",
         location: "พัทยา, ชลบุรี",
         image: "https://images.unsplash.com/photo-1596525164222-385501bf00d7?auto=format&fit=crop&w=600&q=80", 
@@ -10,7 +10,7 @@ const tripsData = [
     },
     {
         id: 2,
-        title: "พูลวิลล่า ปาร์ตี้",
+        title: "พูลวิลล่า เขาใหญ่",
         date: "7 พฤศจิกายน 2569",
         location: "เขาใหญ่",
         image: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=600&q=80",
