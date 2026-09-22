@@ -15,6 +15,7 @@ const tripsData = [
         location: "เขาใหญ่",
         image: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=600&q=80",
         status: "upcoming",
+        fullRouteLink: "https://maps.app.goo.gl/GPD8kcRoCKNAAWD16?g_st=ic",
         // ข้อมูลเส้นทางที่ปรับใหม่ มีพิกัดและลิงก์ Google Maps
         route: [
             { 

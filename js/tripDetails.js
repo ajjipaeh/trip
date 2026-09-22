@@ -1,6 +1,7 @@
 // --- ตัวแปรสำหรับแผนที่ Leaflet ---
 let previewMap = null;
 let mapMarkers = [];
+let routeLine = null;
 let currentActiveTrip = null;
 
 // 1. ฟังก์ชันเปิดหน้ารายละเอียด (ใส่ window. เพื่อให้คลิกจากการ์ดหน้าอื่นได้)
@@ -53,9 +54,25 @@ window.calculateAndRenderTimeline = function(baseTime, mode) {
     const timelineContainer = document.getElementById('timeline-container');
     timelineContainer.innerHTML = '';
     
+    // ล้าง Marker และ เส้นทาง เก่าบนแผนที่
     mapMarkers.forEach(marker => previewMap.removeLayer(marker));
     mapMarkers = [];
+    if (routeLine) {
+        previewMap.removeLayer(routeLine);
+        routeLine = null;
+    }
+    
     let mapBounds = [];
+    let latlngs = []; // เก็บพิกัดทั้งหมดเพื่อวาดเส้น
+
+    // จัดการปุ่มลิงก์เส้นทางรวม
+    const btnFullRoute = document.getElementById('btn-full-route');
+    if (currentActiveTrip.fullRouteLink) {
+        btnFullRoute.href = currentActiveTrip.fullRouteLink;
+        btnFullRoute.classList.remove('d-none');
+    } else {
+        btnFullRoute.classList.add('d-none');
+    }
 
     if(!currentActiveTrip.route) {
         timelineContainer.innerHTML = '<p class="text-muted">ยังไม่มีข้อมูลเส้นทาง</p>';
