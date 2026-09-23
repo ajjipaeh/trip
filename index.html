@@ -251,16 +251,16 @@
 
                     <!-- วงล้อ 2 อัน ซ้าย-ขวา -->
                     <div class="d-flex justify-content-center gap-2 mb-4">
-                        <!-- วงล้อ 1: ชื่อคน -->
+                        <!-- วงล้อ 1: ชื่อคน (ปรับ width/height เป็น 300 แต่ให้ css บีบเหลือ 150px เพื่อความคมชัด 2 เท่า) -->
                         <div class="glass-card p-2 position-relative">
                             <div class="roulette-pointer" style="top: -8px;"></div>
-                            <canvas id="canvas-roulette-1" width="150" height="150"></canvas>
+                            <canvas id="canvas-roulette-1" width="300" height="300" style="width: 150px; height: 150px;"></canvas>
                         </div>
                         
                         <!-- วงล้อ 2: บทลงโทษ -->
                         <div class="glass-card p-2 position-relative">
                             <div class="roulette-pointer" style="top: -8px;"></div>
-                            <canvas id="canvas-roulette-2" width="150" height="150"></canvas>
+                            <canvas id="canvas-roulette-2" width="300" height="300" style="width: 150px; height: 150px;"></canvas>
                         </div>
                     </div>
                     
@@ -271,19 +271,32 @@
                         <div class="col-6">
                             <div class="glass-card p-2">
                                 <small class="fw-bold"><i class="bi bi-person"></i> รายชื่อ</small>
-                                <textarea id="roulette-opt-1" class="form-control mt-1 glass-input text-center" rows="4" style="font-size: 0.8rem;">ทราย
-แป๊ะ
+                                <!-- ใส่ชื่อ 14 คนเป็นค่าเริ่มต้น แต่ยังลบ/พิมพ์ใหม่ได้ -->
+                                <textarea id="roulette-opt-1" class="form-control mt-1 glass-input text-center" rows="6" style="font-size: 0.8rem; white-space: nowrap;">ลีโอ
+ออมสิน
+ป๊อปอาย
+ไทเกอร์
 หญิง
-ป๊อป</textarea>
+บิ๊ก
+ทราย
+พายุ
+อาร์
+แฟนอาร์
+ตอง
+แฟนตอง
+มายด์
+ซีแพค</textarea>
                             </div>
                         </div>
                         <div class="col-6">
                             <div class="glass-card p-2">
                                 <small class="fw-bold"><i class="bi bi-lightning-charge"></i> บทลงโทษ</small>
-                                <textarea id="roulette-opt-2" class="form-control mt-1 glass-input text-center" rows="4" style="font-size: 0.8rem;">ยกหมดแก้ว
+                                <textarea id="roulette-opt-2" class="form-control mt-1 glass-input text-center" rows="6" style="font-size: 0.8rem; white-space: nowrap;">ยกหมดแก้ว
 จ่ายค่ากาแฟ
 เต้น 1 เพลง
-รอดตัวไป</textarea>
+รอดตัวไป
+โดนปะแป้ง
+ชงเหล้า 3 แก้ว</textarea>
                             </div>
                         </div>
                     </div>

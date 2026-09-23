@@ -46,31 +46,47 @@ function initDoubleRoulette() {
     drawWheel(ctx2, options2, colors2, startAngle2);
 }
 
-// ฟังก์ชันวาดวงล้อ (ใช้ซ้ำได้กับทั้ง 2 วง) ขนาดรัศมี 75px (ครึ่งนึงของ 150)
+// ฟังก์ชันวาดวงล้อ (ฉบับแก้ไขความคมชัด และ องศาข้อความ)
 function drawWheel(ctx, opts, colors, currentAngle) {
     if (!ctx) return;
-    ctx.clearRect(0, 0, 150, 150);
-    let arc = Math.PI / (opts.length / 2);
+    
+    // เราตั้งค่า Canvas ไว้ที่ 300x300 จุดกึ่งกลางและรัศมีจึงเป็น 150
+    const centerX = 150;
+    const centerY = 150;
+    const radius = 150;
+    
+    ctx.clearRect(0, 0, 300, 300);
+    
+    // สูตรคำนวณองศาของแต่ละช่อง (360 องศา / จำนวนตัวเลือก)
+    let arc = (2 * Math.PI) / opts.length;
     
     for(let i = 0; i < opts.length; i++) {
         let angle = currentAngle + i * arc;
         ctx.fillStyle = colors[i % colors.length];
         
+        // --- 1. วาดชิ้นส่วนวงล้อให้กลมเนียน ---
         ctx.beginPath();
-        ctx.arc(75, 75, 75, angle, angle + arc, false);
-        ctx.arc(75, 75, 0, angle + arc, angle, true);
+        ctx.moveTo(centerX, centerY); // เริ่มจากจุดศูนย์กลาง
+        ctx.arc(centerX, centerY, radius, angle, angle + arc, false); // ลากโค้งไปตามขอบ
+        ctx.lineTo(centerX, centerY); // ลากเส้นตรงกลับมาจุดศูนย์กลาง
         ctx.fill();
         
+        // --- 2. วาดตัวหนังสือให้เอียงพุ่งออกจากศูนย์กลาง ---
         ctx.save();
+        ctx.translate(centerX, centerY); // ย้ายแกนอ้างอิงไปที่ศูนย์กลางวงล้อ
+        ctx.rotate(angle + arc / 2); // หมุนแกนให้ตรงกับกึ่งกลางของช่องนั้นๆ
+        
         ctx.fillStyle = "#333";
-        // ย้ายจุดหมุนไปวาดตัวหนังสือ
-        ctx.translate(75 + Math.cos(angle + arc / 2) * 50, 
-                        75 + Math.sin(angle + arc / 2) * 50);
-        ctx.rotate(angle + arc / 2 + Math.PI / 2);
+        ctx.font = 'bold 16px Prompt'; // ขนาดใหญ่ขึ้นเพราะ Canvas เป็น 300x300
+        ctx.textAlign = "right"; // จัดข้อความชิดขวา
+        ctx.textBaseline = "middle"; // ให้อยู่กึ่งกลางบรรทัด
+        
         let text = opts[i];
-        ctx.font = 'bold 12px Prompt';
-        if(text.length > 8) text = text.substring(0,8) + '..'; // ตัดคำถ้าเกิน
-        ctx.fillText(text, -ctx.measureText(text).width / 2, 0);
+        if(text.length > 12) text = text.substring(0,12) + '..'; // ตัดคำถ้ายาวไป
+        
+        // วาดข้อความโดยขยับไปทางขวาให้ชิดขอบวงล้อ (เว้นขอบนิดหน่อยที่ระยะ 135)
+        ctx.fillText(text, 135, 0); 
+        
         ctx.restore();
     }
 }
@@ -150,12 +166,12 @@ if (btnSpinDouble) {
             return;
         }
         btnSpinDouble.disabled = true;
-        btnSpinDouble.innerHTML = "กำลังลุ้น... 🌀";
+        btnSpinDouble.innerHTML = "🌀";
         
         spinArcStart1 = Math.random() * 10 + 15;
         spinArcStart2 = Math.random() * 10 + 15;
         spinTime = 0;
-        spinTimeTotal = Math.random() * 2000 + 4000; // 4-6 วินาที
+        spinTimeTotal = Math.random() * 3000 + 6000;
         rotateWheels();
     });
 
