@@ -291,12 +291,42 @@ if(btnStartTap) {
         }, 100);
     });
 
+    // ฟังก์ชันสร้างคลื่นน้ำ (Ripple)
+    function createRipple(event, container) {
+        const circle = document.createElement('div');
+        const diameter = Math.max(container.clientWidth, container.clientHeight);
+        const radius = diameter / 2;
+
+        // ดึงพิกัดนิ้ว (รองรับทั้งมือถือและเมาส์)
+        let clientX = event.clientX || (event.touches ? event.touches[0].clientX : 0);
+        let clientY = event.clientY || (event.touches ? event.touches[0].clientY : 0);
+
+        const rect = container.getBoundingClientRect();
+        circle.style.width = circle.style.height = `${diameter}px`;
+        circle.style.left = `${clientX - rect.left - radius}px`;
+        circle.style.top = `${clientY - rect.top - radius}px`;
+        circle.classList.add('ripple');
+
+        container.appendChild(circle);
+
+        // ลบ div คลื่นทิ้งเมื่อแสดงผลจบ (0.4 วิ) จะได้ไม่หนักเครื่อง
+        setTimeout(() => {
+            circle.remove();
+        }, 400);
+    }
+
     // จับการแตะหน้าจอ (Touch & Click)
     const tapEvent = (window.PointerEvent) ? 'pointerdown' : 'touchstart';
     
+    areaKKC.classList.add('tap-area'); // ใส่ class ให้รองรับคลื่น
+    areaRYG.classList.add('tap-area');
+    
     areaKKC.addEventListener(tapEvent, (e) => {
-        e.preventDefault(); // กันจอกระตุกบนมือถือ
+        e.preventDefault(); 
         if(!isTapping) return;
+        
+        createRipple(e, areaKKC); // เรียกคลื่นน้ำ
+        
         if(kkcScore < 95) { kkcScore++; rygScore--; }
         areaKKC.style.flexGrow = kkcScore; areaRYG.style.flexGrow = rygScore;
     });
@@ -304,6 +334,9 @@ if(btnStartTap) {
     areaRYG.addEventListener(tapEvent, (e) => {
         e.preventDefault();
         if(!isTapping) return;
+        
+        createRipple(e, areaRYG); // เรียกคลื่นน้ำ
+        
         if(rygScore < 95) { rygScore++; kkcScore--; }
         areaKKC.style.flexGrow = kkcScore; areaRYG.style.flexGrow = rygScore;
     });
@@ -314,29 +347,86 @@ window.initBombCup = function() {
     const grid = document.getElementById('bombcup-grid');
     grid.innerHTML = '';
     
-    // สร้างอาเรย์ 14 ใบ มีระเบิด 2 ลูก (เปลี่ยนจำนวนระเบิดตรงนี้ได้)
+    // สร้างอาเรย์ 14 ใบ มีระเบิด 2 ลูก
     let cups = Array(12).fill('safe').concat(Array(2).fill('bomb'));
     cups = cups.sort(() => Math.random() - 0.5); // สลับตำแหน่ง
 
     cups.forEach((type, index) => {
         let cup = document.createElement('div');
         cup.className = 'bomb-cup glass-card';
-        cup.innerHTML = '🍺'; // รูปก่อนเปิด
+        cup.innerHTML = '🍺'; 
         
         cup.addEventListener('click', function() {
-            if(type === 'safe') {
-                this.classList.add('safe');
-                this.innerHTML = '✅';
-            } else {
-                this.classList.add('boom');
-                this.innerHTML = '💥';
-                Swal.fire({ title: 'ตูมมมม!! 💣', text: 'หมดแก้วไปเลยเพื่อน!', confirmButtonColor: '#dc3545', backdrop: `rgba(220,53,69,0.4)` });
-                // หงายไพ่ที่เหลือทั้งหมด
-                document.querySelectorAll('.bomb-cup').forEach(c => c.style.pointerEvents = 'none');
-            }
+            // ป้องกันกดซ้ำตอนที่กำลังนับถอยหลัง หรือเปิดไปแล้ว
+            if(this.classList.contains('opened') || this.classList.contains('counting')) return;
+            
+            this.classList.add('counting');
+            
+            // เริ่มนับถอยหลังบนแก้ว
+            let count = 3;
+            this.innerHTML = count;
+            this.style.backgroundColor = '#ffc107'; // เปลี่ยนแก้วเป็นสีเหลืองลุ้นๆ
+            this.style.color = '#fff';
+            
+            let countDownInterval = setInterval(() => {
+                count--;
+                if(count > 0) {
+                    this.innerHTML = count;
+                } else {
+                    clearInterval(countDownInterval);
+                    this.classList.remove('counting');
+                    this.classList.add('opened');
+                    
+                    // แสดงผลเต็มจอ
+                    showBombResult(type, this);
+                }
+            }, 1000);
         });
         grid.appendChild(cup);
     });
+}
+
+// ฟังก์ชันแสดงหน้าจอเฉลยแบบเต็มจอ
+function showBombResult(type, cupElement) {
+    const overlay = document.getElementById('bombcup-fullscreen');
+    const icon = document.getElementById('bombcup-result-icon');
+    const text = document.getElementById('bombcup-result-text');
+    
+    overlay.classList.remove('d-none'); // เปิดหน้าจอเฉลย
+    
+    if (type === 'safe') {
+        overlay.style.backgroundColor = '#28a745'; // สีเขียว
+        icon.innerHTML = '✅';
+        text.innerHTML = 'รอดตัวไป!';
+        
+        // อัปเดตแก้วให้เป็นสีเขียว
+        cupElement.classList.add('safe');
+        cupElement.innerHTML = '✅';
+        cupElement.style.backgroundColor = ''; // ลบสีเหลืองออก
+    } else {
+        overlay.style.backgroundColor = '#dc3545'; // สีแดง
+        icon.innerHTML = '💥';
+        text.innerHTML = 'ตูมมมม!! หมดแก้ว!';
+        
+        // อัปเดตแก้วให้เป็นสีแดงระเบิด
+        cupElement.classList.add('boom');
+        cupElement.innerHTML = '💥';
+        cupElement.style.backgroundColor = ''; 
+        
+        // ล็อคแก้วที่เหลือไม่ให้กดต่อได้อีก
+        document.querySelectorAll('.bomb-cup').forEach(c => c.style.pointerEvents = 'none');
+    }
+    
+    // ตั้งเวลาปิดอัตโนมัติหลัง 3 วินาที
+    let autoClose = setTimeout(() => {
+        overlay.classList.add('d-none');
+    }, 3000);
+    
+    // หรือให้ผู้เล่นแตะหน้าจอเพื่อปิดก่อน 3 วิ ก็ได้
+    overlay.onclick = function() {
+        clearTimeout(autoClose);
+        overlay.classList.add('d-none');
+    };
 }
 
 // ================= 5. กษัตริย์สั่งลุย (King's Cup) =================

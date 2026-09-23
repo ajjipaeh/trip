@@ -599,3 +599,25 @@ canvas {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+/* --- เอฟเฟกต์คลื่นน้ำเวลารัวนิ้ว (Tap-Tap) --- */
+.tap-area {
+    position: relative;
+    overflow: hidden; /* ไม่ให้คลื่นล้นออกนอกเขตตัวเอง */
+}
+
+.ripple {
+    position: absolute;
+    border-radius: 50%;
+    transform: scale(0);
+    animation: ripple-animation 0.4s ease-out;
+    background-color: rgba(255, 255, 255, 0.5); /* คลื่นสีขาวโปร่งแสง */
+    pointer-events: none; /* ไม่ให้คลื่นบังการกดนิ้ว */
+}
+
+@keyframes ripple-animation {
+    to {
+        transform: scale(4);
+        opacity: 0;
+    }
+}

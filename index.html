@@ -405,14 +405,14 @@
                 </div>
                 <!-- พื้นที่กดแข่งกัน (บน-ล่าง) -->
                 <div class="d-flex flex-column h-100">
-                    <div id="tap-area-ryg" class="flex-fill d-flex align-items-center justify-content-center flex-column text-white" style="background-color: var(--color-1); transition: flex-grow 0.1s;">
+                    <div id="tap-area-ryg" class="tap-area flex-fill d-flex align-items-center justify-content-center flex-column text-white" style="background-color: var(--color-1); transition: flex-grow 0.1s;">
                         <h1 class="display-1 fw-bold opacity-50" style="transform: rotate(180deg);">🌊</h1>
                         <h3 class="fw-bold" style="transform: rotate(180deg);">ทีมระยอง</h3>
                     </div>
                     <div class="bg-dark text-white text-center fw-bold py-1 shadow-lg z-3">
                         <span id="taptap-timer">เวลา: 10.0s</span>
                     </div>
-                    <div id="tap-area-kkc" class="flex-fill d-flex align-items-center justify-content-center flex-column text-white" style="background-color: var(--color-4); transition: flex-grow 0.1s;">
+                    <div id="tap-area-kkc" class="tap-area flex-fill d-flex align-items-center justify-content-center flex-column text-white" style="background-color: var(--color-4); transition: flex-grow 0.1s;">
                         <h1 class="display-1 fw-bold opacity-50">🦖</h1>
                         <h3 class="fw-bold">ทีมขอนแก่น</h3>
                     </div>
@@ -435,6 +435,12 @@
                     <div id="bombcup-grid" class="d-flex flex-wrap justify-content-center gap-3 mt-4 px-2">
                         <!-- แก้ว 14 ใบจะถูกสร้างที่นี่ -->
                     </div>
+                </div>
+                <!-- Full Screen Overlay สำหรับเฉลยแก้วมรณะ -->
+                <div id="bombcup-fullscreen" class="d-none position-fixed top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center text-white" style="z-index: 9999; cursor: pointer;">
+                    <h1 id="bombcup-result-icon" class="display-1 mb-3" style="font-size: 8rem;">✅</h1>
+                    <h2 id="bombcup-result-text" class="fw-bold">รอดตัวไป!</h2>
+                    <p class="mt-5 opacity-75 small">(แตะหน้าจอเพื่อปิด)</p>
                 </div>
             </div>
 
