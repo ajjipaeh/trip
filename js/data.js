@@ -23,50 +23,36 @@ const tripsData = [
         location: "เขาใหญ่",
         image: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=600&q=80",
         status: "upcoming",
-        fullRouteLink: "https://maps.app.goo.gl/GPD8kcRoCKNAAWD16?g_st=ic",
-        // ข้อมูลเส้นทางที่ปรับใหม่ มีพิกัดและลิงก์ Google Maps
-        route: [
-            { 
-                id: 1, 
-                name: "รับทรายที่บ้าน + ซื้อเบียร์ที่ร้านพายุ (รถแป๊ะ)", 
-                type: "start", 
-                durationMinutes: 0, // จุดเริ่มต้น
-                lat: 16.0594, lng: 102.7297, // พิกัดคร่าวๆ บ้านไผ่
-                gmapLink: "https://maps.app.goo.gl/..." // ใส่ลิงก์จริงได้เลย
+        // โครงสร้างเส้นทางแบบแบ่งทีม
+        routes: {
+            teamKKC: {
+                id: "teamKKC",
+                name: "ทีมขอนแก่น 🦖",
+                theme: "pink", // ใช้สีชมพูตุ่น
+                members: ["มายด์", "ซีแพค", "ป๊อปอาย", "ไทเกอร์", "ลีโอ", "หญิง", "ทราย", "พายุ"],
+                gmapLink: "https://maps.app.goo.gl/GPD8kcRoCKNAAWD16?g_st=ic",
+                path: [
+                    { id: 1, name: "รับทรายที่บ้าน + ซื้อเบียร์ร้านพายุ", type: "start", durationMinutes: 0, lat: 16.0594, lng: 102.7297, gmapLink: "https://maps.app.goo.gl/..." },
+                    { id: 2, name: "ออกจากบ้านไผ่ + แวะรับหญิงที่โนนศิลา", type: "stop", durationMinutes: 30, lat: 15.9750, lng: 102.6711, gmapLink: "https://maps.app.goo.gl/..." },
+                    { id: 3, name: "แวะซื้อของสดที่แม็คโครปากช่อง", type: "stop", durationMinutes: 210, lat: 14.6865, lng: 101.4063, gmapLink: "https://maps.app.goo.gl/..." },
+                    { id: 4, name: "แวะคาเฟ่ (สตาร์ดอย หรือ ฮารุโดท)", type: "stop", durationMinutes: 50, lat: 14.5379, lng: 101.4005, gmapLink: "https://maps.app.goo.gl/..." },
+                    { id: 5, name: "เช็คอินบ้านพัก Verona", type: "end", durationMinutes: 100, lat: 14.5000, lng: 101.4000, gmapLink: "https://maps.app.goo.gl/..." }
+                ]
             },
-            { 
-                id: 2, 
-                name: "ออกจากบ้านไผ่ + แวะรับหญิงที่โนนศิลา (รถป๊อป)", 
-                type: "stop", 
-                durationMinutes: 30, // จาก 07:30 ไป 08:00 ใช้เวลา 30 นาที
-                lat: 15.9750, lng: 102.6711, // พิกัดโนนศิลา
-                gmapLink: "https://maps.app.goo.gl/..." 
-            },
-            { 
-                id: 3, 
-                name: "แวะซื้อของสดที่แม็คโครปากช่อง", 
-                type: "stop", 
-                durationMinutes: 210, // จาก 08:00 ไป 11:30 ใช้เวลา 3.5 ชม. (210 นาที)
-                lat: 14.6865, lng: 101.4063, // พิกัดแม็คโครปากช่อง
-                gmapLink: "https://maps.app.goo.gl/..." 
-            },
-            { 
-                id: 4, 
-                name: "แวะคาเฟ่ (สตาร์ดอย หรือ ฮารุโดท)", 
-                type: "stop", 
-                durationMinutes: 50, // จาก 11:30 ไป 12:20
-                lat: 14.5379, lng: 101.4005,
-                gmapLink: "https://maps.app.goo.gl/..." 
-            },
-            { 
-                id: 5, 
-                name: "เช็คอินบ้านพัก", 
-                type: "end", 
-                durationMinutes: 100, // จาก 12:20 ไป 14:00
-                lat: 14.5000, lng: 101.4000, // พิกัดที่พัก
-                gmapLink: "https://maps.app.goo.gl/..." 
+            teamRYG: {
+                id: "teamRYG",
+                name: "ทีมระยอง 🌊",
+                theme: "mint", // ใช้สีเขียวมินต์
+                members: ["ตอง", "แฟนตอง", "อาร์", "แฟนอาร์", "ออมสิน", "บิ๊ก"],
+                gmapLink: "https://maps.app.goo.gl/...",
+                path: [
+                    // จำลองจุดแวะทีมระยองไปก่อน (สามารถมาแก้ทีหลังได้)
+                    { id: 1, name: "จุดนัดพบ (ระยอง/ชลบุรี)", type: "start", durationMinutes: 0, lat: 12.6814, lng: 101.2816, gmapLink: "https://maps.app.goo.gl/..." },
+                    { id: 2, name: "แวะพักซื้อกาแฟ มอเตอร์เวย์", type: "stop", durationMinutes: 120, lat: 13.5283, lng: 101.0000, gmapLink: "https://maps.app.goo.gl/..." },
+                    { id: 3, name: "เช็คอินบ้านพัก Verona", type: "end", durationMinutes: 150, lat: 14.5000, lng: 101.4000, gmapLink: "https://maps.app.goo.gl/..." }
+                ]
             }
-        ]
+        }
     },
     {
         id: 4,

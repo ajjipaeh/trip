@@ -477,3 +477,83 @@ canvas {
 .rolling {
     animation: roll-dice 0.3s infinite linear;
 }
+
+/* --- ส่วนปุ่มสลับทีม (iOS Segmented Control) --- */
+.ios-segmented-control {
+    display: flex;
+    position: relative;
+    background-color: rgba(0, 0, 0, 0.08); /* พื้นหลังสีเทาอ่อนๆ */
+    border-radius: 12px;
+    padding: 3px;
+    margin: 0 auto;
+}
+
+.ios-segmented-control input[type="radio"] {
+    display: none; /* ซ่อนปุ่มวงกลม Radio เดิม */
+}
+
+.segment-label {
+    flex: 1;
+    text-align: center;
+    padding: 8px 0;
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #666;
+    cursor: pointer;
+    z-index: 2;
+    transition: color 0.3s ease;
+}
+
+/* กล่องสีขาวที่เลื่อนสลับไปมา */
+.segment-highlight {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: calc(50% - 3px);
+    height: calc(100% - 6px);
+    background-color: #fff;
+    border-radius: 9px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+    z-index: 1;
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* เมื่อเลือกทีมระยอง ให้กล่องสีขาวเลื่อนไปทางขวา */
+#tab-teamRYG:checked ~ .segment-highlight {
+    transform: translateX(100%);
+}
+
+/* เปลี่ยนสีข้อความเมื่อถูกเลือก */
+#tab-teamKKC:checked ~ label[for="tab-teamKKC"],
+#tab-teamRYG:checked ~ label[for="tab-teamRYG"] {
+    color: #000;
+}
+
+
+/* --- ส่วนหมุดแผนที่ (Custom Marker) --- */
+.custom-map-marker {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    font-family: 'Prompt', sans-serif;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    border: 2px solid white;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+/* สีประจำทีม */
+.marker-pink {
+    background-color: var(--color-4); /* ชมพูตุ่น */
+}
+
+.marker-mint {
+    background-color: var(--color-1); /* เขียวมินต์ */
+    color: #333; /* ตัวหนังสือสีเข้มเพื่อให้อ่านง่ายบนสีมินต์ */
+    text-shadow: none;
+}
