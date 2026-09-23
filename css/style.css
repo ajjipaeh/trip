@@ -371,7 +371,8 @@ body {
 .timeline-wrapper::before {
     content: '';
     position: absolute;
-    top: 0; left: 26px; /* เส้นแกนกลาง */
+    top: 0;
+    left: 26px; /* เส้นแกนกลาง */
     height: 100%;
     width: 2px;
     background: var(--color-4);
@@ -394,6 +395,16 @@ body {
     background: white;
     border: 3px solid var(--color-4);
     box-shadow: 0 0 0 4px rgba(255,255,255,0.8);
+}
+
+/* 🩷 ทีมชมพู */
+.timeline-item.pink .timeline-dot {
+    border-color: var(--color-4);
+}
+
+/* 🟢 ทีมมิ้น */
+.timeline-item.mint .timeline-dot {
+    border-color: var(--color-1);
 }
 
 .timeline-item.start .timeline-dot { border-color: #28a745; }

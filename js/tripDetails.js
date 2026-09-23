@@ -124,7 +124,7 @@ window.calculateAndRenderTimeline = function(baseTime, mode) {
 
         // 📝 วาดไทม์ไลน์
         const item = document.createElement('div');
-        item.className = `timeline-item ${stop.type}`;
+        item.className = `timeline-item ${stop.type} ${activeRouteData.theme}`;
         
         item.innerHTML = `
             <div class="timeline-dot" style="background-color: ${dotColor};"></div>
