@@ -343,12 +343,15 @@ if(btnStartTap) {
 }
 
 // ================= 4. แก้วมรณะ (Bomb Cup) =================
+let bombFoundCount = 0; // ตัวแปรนับจำนวนระเบิดที่ถูกเปิดเจอ
+
 window.initBombCup = function() {
     const grid = document.getElementById('bombcup-grid');
     grid.innerHTML = '';
+    bombFoundCount = 0; // รีเซ็ตตัวนับทุกครั้งที่เริ่มเกมใหม่
     
-    // สร้างอาเรย์ 14 ใบ มีระเบิด 2 ลูก
-    let cups = Array(12).fill('safe').concat(Array(2).fill('bomb'));
+    // สร้างอาเรย์ 24 ใบ มีระเบิด 4 ลูก
+    let cups = Array(20).fill('safe').concat(Array(4).fill('bomb'));
     cups = cups.sort(() => Math.random() - 0.5); // สลับตำแหน่ง
 
     cups.forEach((type, index) => {
@@ -357,15 +360,14 @@ window.initBombCup = function() {
         cup.innerHTML = '🍺'; 
         
         cup.addEventListener('click', function() {
-            // ป้องกันกดซ้ำตอนที่กำลังนับถอยหลัง หรือเปิดไปแล้ว
             if(this.classList.contains('opened') || this.classList.contains('counting')) return;
             
             this.classList.add('counting');
             
-            // เริ่มนับถอยหลังบนแก้ว
+            // เริ่มนับถอยหลังบนแก้ว 3 วิ
             let count = 3;
             this.innerHTML = count;
-            this.style.backgroundColor = '#ffc107'; // เปลี่ยนแก้วเป็นสีเหลืองลุ้นๆ
+            this.style.backgroundColor = '#ffc107'; 
             this.style.color = '#fff';
             
             let countDownInterval = setInterval(() => {
@@ -393,28 +395,28 @@ function showBombResult(type, cupElement) {
     const text = document.getElementById('bombcup-result-text');
     
     overlay.classList.remove('d-none'); // เปิดหน้าจอเฉลย
+    icon.classList.remove('boom-animation');
     
     if (type === 'safe') {
         overlay.style.backgroundColor = '#28a745'; // สีเขียว
         icon.innerHTML = '✅';
         text.innerHTML = 'รอดตัวไป!';
         
-        // อัปเดตแก้วให้เป็นสีเขียว
         cupElement.classList.add('safe');
         cupElement.innerHTML = '✅';
-        cupElement.style.backgroundColor = ''; // ลบสีเหลืองออก
+        cupElement.style.backgroundColor = ''; 
     } else {
+        bombFoundCount++; // 💥 เจอบอมบ์ เพิ่มจำนวนนับ
+        
         overlay.style.backgroundColor = '#dc3545'; // สีแดง
         icon.innerHTML = '💥';
         text.innerHTML = 'ตูมมมม!! หมดแก้ว!';
+
+        icon.classList.add('boom-animation');
         
-        // อัปเดตแก้วให้เป็นสีแดงระเบิด
         cupElement.classList.add('boom');
         cupElement.innerHTML = '💥';
         cupElement.style.backgroundColor = ''; 
-        
-        // ล็อคแก้วที่เหลือไม่ให้กดต่อได้อีก
-        document.querySelectorAll('.bomb-cup').forEach(c => c.style.pointerEvents = 'none');
     }
     
     // ตั้งเวลาปิดอัตโนมัติหลัง 3 วินาที
@@ -422,7 +424,7 @@ function showBombResult(type, cupElement) {
         overlay.classList.add('d-none');
     }, 3000);
     
-    // หรือให้ผู้เล่นแตะหน้าจอเพื่อปิดก่อน 3 วิ ก็ได้
+    // แตะหน้าจอเพื่อปิดก่อน 3 วิ
     overlay.onclick = function() {
         clearTimeout(autoClose);
         overlay.classList.add('d-none');
