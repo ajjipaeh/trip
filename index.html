@@ -138,6 +138,43 @@
                                 <i class="bi bi-chevron-right ms-auto text-muted"></i>
                             </div>
                         </div>
+
+                        <!-- เกมที่ 3: สงครามรัวนิ้ว -->
+                        <div class="col-12 mb-3">
+                            <div class="glass-card p-3 text-start d-flex align-items-center" onclick="openMiniGame('taptap')" style="cursor: pointer;">
+                                <div class="bg-white p-3 rounded-circle me-3 shadow-sm text-warning" style="font-size: 1.5rem;">👆</div>
+                                <div>
+                                    <h6 class="fw-bold mb-1">สงครามรัวนิ้ว (Tap-Tap)</h6>
+                                    <small class="text-muted">ขอนแก่น VS ระยอง รัวให้จอยับ!</small>
+                                </div>
+                                <i class="bi bi-chevron-right ms-auto text-muted"></i>
+                            </div>
+                        </div>
+
+                        <!-- เกมที่ 4: แก้วมรณะ -->
+                        <div class="col-12 mb-3">
+                            <div class="glass-card p-3 text-start d-flex align-items-center" onclick="openMiniGame('bombcup')" style="cursor: pointer;">
+                                <div class="bg-white p-3 rounded-circle me-3 shadow-sm text-danger" style="font-size: 1.5rem;">💣</div>
+                                <div>
+                                    <h6 class="fw-bold mb-1">แก้วมรณะ (Russian Roulette)</h6>
+                                    <small class="text-muted">จิ้มทีละแก้ว ใครเจอบอมบ์..หมดแก้ว!</small>
+                                </div>
+                                <i class="bi bi-chevron-right ms-auto text-muted"></i>
+                            </div>
+                        </div>
+
+                        <!-- เกมที่ 5: กษัตริย์สั่งลุย -->
+                        <div class="col-12 mb-3">
+                            <div class="glass-card p-3 text-start d-flex align-items-center" onclick="openMiniGame('kingscup')" style="cursor: pointer;">
+                                <div class="bg-white p-3 rounded-circle me-3 shadow-sm text-success" style="font-size: 1.5rem;">👑</div>
+                                <div>
+                                    <h6 class="fw-bold mb-1">กษัตริย์สั่งลุย (King's Cup)</h6>
+                                    <small class="text-muted">จั่วไพ่ออกคำสั่งสุดฮา</small>
+                                </div>
+                                <i class="bi bi-chevron-right ms-auto text-muted"></i>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>
@@ -355,6 +392,69 @@
                             <span class="input-group-text bg-white fw-bold">⚅ 6</span>
                             <input type="text" class="form-control dice-rule" data-dice="6" value="หมดแก้ว!! 🍻">
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- เกมที่ 3: สงครามรัวนิ้ว -->
+            <div id="subpage-taptap" class="page-section d-none bg-light" style="position: absolute; top: 0; left: 0; width: 100%; height: 100vh; z-index: 1050; overflow: hidden;">
+                <div class="ios-header glass-nav d-flex align-items-center px-3 py-3 position-absolute w-100" style="z-index: 10;">
+                    <button class="btn btn-link text-dark p-0 fw-bold text-decoration-none" onclick="closeMiniGame()"><i class="bi bi-chevron-left"></i> กลับ</button>
+                    <h5 class="mx-auto mb-0 fw-bold">Tap-Tap Battle</h5>
+                    <div style="width: 50px;"></div>
+                </div>
+                <!-- พื้นที่กดแข่งกัน (บน-ล่าง) -->
+                <div class="d-flex flex-column h-100">
+                    <div id="tap-area-ryg" class="flex-fill d-flex align-items-center justify-content-center flex-column text-white" style="background-color: var(--color-1); transition: flex-grow 0.1s;">
+                        <h1 class="display-1 fw-bold opacity-50" style="transform: rotate(180deg);">🌊</h1>
+                        <h3 class="fw-bold" style="transform: rotate(180deg);">ทีมระยอง</h3>
+                    </div>
+                    <div class="bg-dark text-white text-center fw-bold py-1 shadow-lg z-3">
+                        <span id="taptap-timer">เวลา: 10.0s</span>
+                    </div>
+                    <div id="tap-area-kkc" class="flex-fill d-flex align-items-center justify-content-center flex-column text-white" style="background-color: var(--color-4); transition: flex-grow 0.1s;">
+                        <h1 class="display-1 fw-bold opacity-50">🦖</h1>
+                        <h3 class="fw-bold">ทีมขอนแก่น</h3>
+                    </div>
+                </div>
+                <!-- ปุ่มเริ่มเกม ลอยอยู่ตรงกลาง -->
+                <div id="taptap-start-overlay" class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="background: rgba(0,0,0,0.7); z-index: 5;">
+                    <button id="btn-start-taptap" class="btn btn-ios btn-lg py-3 px-5 fs-3 shadow-lg">🔥 เริ่มประจัญบาน!</button>
+                </div>
+            </div>
+
+            <!-- เกมที่ 4: แก้วมรณะ -->
+            <div id="subpage-bombcup" class="page-section d-none bg-light" style="position: absolute; top: 0; left: 0; width: 100%; height: 100vh; z-index: 1050; overflow-y: auto;">
+                <div class="ios-header glass-nav d-flex align-items-center px-3 py-3 sticky-top">
+                    <button class="btn btn-link text-decoration-none text-dark p-0 fw-bold" onclick="closeMiniGame()"><i class="bi bi-chevron-left"></i> กลับ</button>
+                    <h5 class="mx-auto mb-0 fw-bold">แก้วมรณะ</h5>
+                    <button class="btn btn-sm btn-outline-danger rounded-pill" onclick="initBombCup()">รีเซ็ต</button>
+                </div>
+                <div class="container pb-5 mt-4 text-center">
+                    <p class="text-muted">ระเบิดซ่อนอยู่ 2 ลูก... สลับกันจิ้มเลย!</p>
+                    <div id="bombcup-grid" class="d-flex flex-wrap justify-content-center gap-3 mt-4 px-2">
+                        <!-- แก้ว 14 ใบจะถูกสร้างที่นี่ -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- เกมที่ 5: กษัตริย์สั่งลุย -->
+            <div id="subpage-kingscup" class="page-section d-none bg-light" style="position: absolute; top: 0; left: 0; width: 100%; height: 100vh; z-index: 1050; overflow-y: auto;">
+                <div class="ios-header glass-nav d-flex align-items-center px-3 py-3 sticky-top">
+                    <button class="btn btn-link text-decoration-none text-dark p-0 fw-bold" onclick="closeMiniGame()"><i class="bi bi-chevron-left"></i> กลับ</button>
+                    <h5 class="mx-auto mb-0 fw-bold">กษัตริย์สั่งลุย</h5>
+                    <div style="width: 50px;"></div>
+                </div>
+                <div class="container pb-5 mt-4 text-center">
+                    <p class="text-muted mb-4">แตะที่ไพ่เพื่อจั่ว!</p>
+                    <!-- หลังไพ่ -->
+                    <div id="kingscup-deck" class="glass-card mx-auto d-flex align-items-center justify-content-center shadow-lg" style="width: 200px; height: 300px; cursor: pointer; background: linear-gradient(45deg, var(--color-4), var(--color-1)); border: 5px solid white;">
+                        <h1 class="display-1 text-white opacity-50">👑</h1>
+                    </div>
+                    <!-- โชว์กติกา -->
+                    <div id="kingscup-result" class="glass-card p-4 mt-4 mx-auto d-none" style="max-width: 320px; animation: fadeIn 0.5s;">
+                        <h3 id="kc-title" class="fw-bold text-danger">ชื่อไพ่</h3>
+                        <p id="kc-desc" class="mb-0 fs-5">กติกาการกินจะขึ้นตรงนี้</p>
                     </div>
                 </div>
             </div>

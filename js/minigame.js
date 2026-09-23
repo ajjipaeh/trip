@@ -9,6 +9,15 @@ window.openMiniGame = function(gameId) {
         initDoubleRoulette(); 
     } else if (gameId === 'dice') {
         document.getElementById('subpage-dice').classList.remove('d-none');
+    } else if (gameId === 'taptap') {
+        document.getElementById('subpage-taptap').classList.remove('d-none');
+        resetTapTap();
+    } else if (gameId === 'bombcup') {
+        document.getElementById('subpage-bombcup').classList.remove('d-none');
+        initBombCup();
+    } else if (gameId === 'kingscup') {
+        document.getElementById('subpage-kingscup').classList.remove('d-none');
+        document.getElementById('kingscup-result').classList.add('d-none');
     }
 };
 
@@ -16,6 +25,10 @@ window.openMiniGame = function(gameId) {
 window.closeMiniGame = function() {
     document.getElementById('subpage-roulette').classList.add('d-none');
     document.getElementById('subpage-dice').classList.add('d-none');
+    document.getElementById('subpage-taptap').classList.add('d-none');
+    document.getElementById('subpage-bombcup').classList.add('d-none');
+    document.getElementById('subpage-kingscup').classList.add('d-none');
+    if(taptapInterval) clearInterval(taptapInterval); // หยุดเวลาถ้ากดปิดกลางคัน
 };
 
 // --- ระบบ วงล้อคู่ (Double Roulette) ---
@@ -229,5 +242,131 @@ if (btnRollDice) {
                 }, 400);
             }
         }, 100); 
+    });
+}
+
+// ================= 3. สงครามรัวนิ้ว (Tap-Tap Battle) =================
+const areaKKC = document.getElementById('tap-area-kkc');
+const areaRYG = document.getElementById('tap-area-ryg');
+const btnStartTap = document.getElementById('btn-start-taptap');
+let kkcScore = 50, rygScore = 50;
+let taptapTime = 10.0;
+let taptapInterval = null;
+let isTapping = false;
+
+function resetTapTap() {
+    kkcScore = 50; rygScore = 50;
+    areaKKC.style.flexGrow = kkcScore;
+    areaRYG.style.flexGrow = rygScore;
+    document.getElementById('taptap-timer').innerText = "เวลา: 10.0s";
+    document.getElementById('taptap-start-overlay').classList.remove('d-none');
+    isTapping = false;
+}
+
+if(btnStartTap) {
+    btnStartTap.addEventListener('click', () => {
+        document.getElementById('taptap-start-overlay').classList.add('d-none');
+        taptapTime = 10.0;
+        isTapping = true;
+        
+        taptapInterval = setInterval(() => {
+            taptapTime -= 0.1;
+            document.getElementById('taptap-timer').innerText = `เวลา: ${taptapTime.toFixed(1)}s`;
+            
+            if(taptapTime <= 0) {
+                clearInterval(taptapInterval);
+                isTapping = false;
+                document.getElementById('taptap-timer').innerText = "หมดเวลา!!";
+                
+                let winner = "";
+                if(kkcScore > rygScore) winner = "🦖 ทีมขอนแก่น ชนะ!!";
+                else if(rygScore > kkcScore) winner = "🌊 ทีมระยอง ชนะ!!";
+                else winner = "เสมอ! (ยกหมดโต๊ะ!)";
+
+                setTimeout(() => {
+                    Swal.fire({ title: 'หมดเวลา!', text: winner, confirmButtonColor: '#DC9B9B', confirmButtonText: 'กลับไปล้างแค้น' })
+                    .then(() => resetTapTap());
+                }, 500);
+            }
+        }, 100);
+    });
+
+    // จับการแตะหน้าจอ (Touch & Click)
+    const tapEvent = (window.PointerEvent) ? 'pointerdown' : 'touchstart';
+    
+    areaKKC.addEventListener(tapEvent, (e) => {
+        e.preventDefault(); // กันจอกระตุกบนมือถือ
+        if(!isTapping) return;
+        if(kkcScore < 95) { kkcScore++; rygScore--; }
+        areaKKC.style.flexGrow = kkcScore; areaRYG.style.flexGrow = rygScore;
+    });
+
+    areaRYG.addEventListener(tapEvent, (e) => {
+        e.preventDefault();
+        if(!isTapping) return;
+        if(rygScore < 95) { rygScore++; kkcScore--; }
+        areaKKC.style.flexGrow = kkcScore; areaRYG.style.flexGrow = rygScore;
+    });
+}
+
+// ================= 4. แก้วมรณะ (Bomb Cup) =================
+window.initBombCup = function() {
+    const grid = document.getElementById('bombcup-grid');
+    grid.innerHTML = '';
+    
+    // สร้างอาเรย์ 14 ใบ มีระเบิด 2 ลูก (เปลี่ยนจำนวนระเบิดตรงนี้ได้)
+    let cups = Array(12).fill('safe').concat(Array(2).fill('bomb'));
+    cups = cups.sort(() => Math.random() - 0.5); // สลับตำแหน่ง
+
+    cups.forEach((type, index) => {
+        let cup = document.createElement('div');
+        cup.className = 'bomb-cup glass-card';
+        cup.innerHTML = '🍺'; // รูปก่อนเปิด
+        
+        cup.addEventListener('click', function() {
+            if(type === 'safe') {
+                this.classList.add('safe');
+                this.innerHTML = '✅';
+            } else {
+                this.classList.add('boom');
+                this.innerHTML = '💥';
+                Swal.fire({ title: 'ตูมมมม!! 💣', text: 'หมดแก้วไปเลยเพื่อน!', confirmButtonColor: '#dc3545', backdrop: `rgba(220,53,69,0.4)` });
+                // หงายไพ่ที่เหลือทั้งหมด
+                document.querySelectorAll('.bomb-cup').forEach(c => c.style.pointerEvents = 'none');
+            }
+        });
+        grid.appendChild(cup);
+    });
+}
+
+// ================= 5. กษัตริย์สั่งลุย (King's Cup) =================
+const kcRules = [
+    { title: "น้ำตก (Waterfall)", desc: "เริ่มกินพร้อมกัน! คนแรกหยุด คนต่อไปถึงหยุดได้ วนไปจนจบวง" },
+    { title: "คุณ (You)", desc: "ชี้หน้าใครก็ได้ 1 คน... ให้คนนั้นยกหมดแก้ว!" },
+    { title: "ฉัน (Me)", desc: "ยินดีด้วย คนเปิดไพ่ใบนี้ ยกหมดแก้วด้วยตัวเอง!" },
+    { title: "สาวๆ (Ladies)", desc: "ผู้หญิงทุกคนในวง ชนแก้วแล้วดื่ม!" },
+    { title: "หนุ่มๆ (Men)", desc: "ผู้ชายทุกคนในวง ชนแก้วแล้วดื่ม!" },
+    { title: "คู่หู (Mate)", desc: "เลือกคู่หู 1 คน ตั้งแต่นี้ไป ถ้าคุณโดนกิน คู่หูต้องกินด้วย!" },
+    { title: "ชี้หน้า (Point)", desc: "นับ 1..2..3 ชี้หน้าคนอื่น ใครโดนชี้เยอะสุด โดน 1 ช็อต!" },
+    { title: "หมวดหมู่ (Category)", desc: "ตั้งหมวดหมู่มา 1 อย่าง (เช่น ยี่ห้อรถ) วนตอบ ใครนึกไม่ออก กิน!" },
+    { title: "กฎเหล็ก (Rule)", desc: "ตั้งกฎอะไรก็ได้ 1 ข้อ (เช่น ห้ามพูดคำหยาบ) ใครเผลอทำ โดนกิน!" }
+];
+
+const deck = document.getElementById('kingscup-deck');
+if(deck) {
+    deck.addEventListener('click', () => {
+        deck.style.transform = "scale(0.9)";
+        setTimeout(() => { deck.style.transform = "scale(1)"; }, 150);
+
+        const randomRule = kcRules[Math.floor(Math.random() * kcRules.length)];
+        
+        const resultBox = document.getElementById('kingscup-result');
+        resultBox.classList.add('d-none');
+        
+        setTimeout(() => {
+            document.getElementById('kc-title').innerText = randomRule.title;
+            document.getElementById('kc-desc').innerText = randomRule.desc;
+            resultBox.classList.remove('d-none');
+        }, 200); // ดีเลย์นิดนึงให้ดูมีจังหวะจั่ว
     });
 }

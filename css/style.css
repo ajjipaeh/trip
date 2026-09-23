@@ -557,3 +557,45 @@ canvas {
     color: #333; /* ตัวหนังสือสีเข้มเพื่อให้อ่านง่ายบนสีมินต์ */
     text-shadow: none;
 }
+
+/* --- มินิเกม แก้วมรณะ --- */
+.bomb-cup {
+    width: 70px;
+    height: 70px;
+    background-color: white;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+.bomb-cup.safe {
+    background-color: #d4edda;
+    color: #28a745;
+    pointer-events: none;
+    transform: scale(0.95);
+}
+.bomb-cup.boom {
+    background-color: #f8d7da;
+    color: #dc3545;
+    pointer-events: none;
+    animation: shake 0.5s;
+    box-shadow: 0 0 20px rgba(220, 53, 69, 0.6);
+}
+@keyframes shake {
+    0% { transform: translate(1px, 1px) rotate(0deg); }
+    20% { transform: translate(-3px, 0px) rotate(1deg); }
+    40% { transform: translate(1px, -1px) rotate(1deg); }
+    60% { transform: translate(-3px, 1px) rotate(0deg); }
+    80% { transform: translate(-1px, -1px) rotate(1deg); }
+    100% { transform: translate(1px, -2px) rotate(-1deg); }
+}
+
+/* --- กษัตริย์สั่งลุย (Fade In) --- */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
