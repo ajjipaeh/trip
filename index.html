@@ -491,6 +491,15 @@
                         
                         <div class="segment-highlight"></div>
                     </div>
+
+                    <!-- แถบแจ้งเตือนสถานะ Live (ซ่อนไว้ก่อน จะโชว์เมื่อมีการเช็คอิน) -->
+                    <div id="live-status-alert" class="alert d-flex align-items-center d-none shadow-sm mb-3 rounded-4 border-0" role="alert" style="background: linear-gradient(135deg, #e0f7fa, #b2ebf2);">
+                        <i class="bi bi-broadcast fs-3 me-3 text-info pulse-icon"></i>
+                        <div>
+                            <h6 class="mb-1 fw-bold text-dark" id="live-status-title">อัปเดตล่าสุด...</h6>
+                            <small class="text-muted fw-bold" id="live-status-desc">กำลังโหลดข้อมูล</small>
+                        </div>
+                    </div>
                     
                     <!-- ส่วนแผนที่พรีวิว (Leaflet) -->
                     <div class="glass-card p-2 mb-4">
@@ -515,9 +524,22 @@
                             <label class="btn btn-outline-danger btn-sm flex-grow-1 rounded-pill" for="mode-end">อยากไปถึงเวลา</label>
                         </div>
                         
-                        <div class="d-flex align-items-center gap-3">
-                            <input type="time" id="simulator-time" class="form-control rounded-pill text-center fw-bold" value="06:00">
-                            <button id="btn-calculate-time" class="btn btn-ios w-50">คำนวณ</button>
+                        <div class="d-flex align-items-center gap-2">
+                            <input type="time" id="simulator-time" class="form-control rounded-pill text-center fw-bold flex-grow-1" value="06:00">
+                            <button id="btn-time-now" class="btn btn-outline-dark rounded-pill px-3 shadow-sm flex-shrink-0" title="ใช้เวลาปัจจุบัน">
+                                <i class="bi bi-clock-history"></i> ตอนนี้
+                            </button>
+                        </div>
+
+                        <div class="text-center mt-3">
+                            <button id="btn-calculate-time" class="btn btn-ios px-5"> คำนวณ</button>
+                        </div>
+
+                        <!-- ปุ่มล้างข้อมูลเช็คอิน (โชว์เฉพาะ มายด์) -->
+                        <div id="admin-reset-zone" class="text-center mt-3 border-top pt-2 d-none">
+                            <button class="btn btn-sm btn-outline-danger rounded-pill" onclick="resetCheckins()">
+                                <i class="bi bi-trash3"></i> แอดมิน: ล้างข้อมูลเช็คอินทั้งหมด
+                            </button>
                         </div>
                     </div>
 
