@@ -73,7 +73,8 @@ function renderFundData() {
 
     // --- 1. จัดการข้อมูลส่วนตัว ---
     document.getElementById('fund-user-name').textContent = userName;
-    
+    document.getElementById('fund-personal-total').textContent = myTotalShare.toLocaleString();
+
     if (!myData.isActive) {
         document.getElementById('fund-personal-remain').textContent = "ไม่ได้ไปทริปนี้";
         document.getElementById('fund-personal-remain').classList.add('fs-4');
@@ -116,7 +117,7 @@ function renderFundData() {
             colorClass = "text-muted";
             amountText = "฿0";
         } else {
-            statusText = `<span class="badge bg-primary rounded-pill">หาร ${payingMembersCount} คน</span>`;
+            statusText = `<span class="badge bg-primary-subtle rounded-pill">หาร ${payingMembersCount} คน</span>`;
         }
 
         expenseList.innerHTML += `
@@ -169,7 +170,7 @@ function renderFundData() {
         } else if (memRemain === 0) {
             statusBadge = `<span class="badge bg-success rounded-pill">ครบแล้ว ✅</span>`;
         } else {
-            statusBadge = `<span class="badge bg-warning text-dark rounded-pill">ค้าง ฿${memRemain.toLocaleString()}</span>`;
+            statusBadge = `<span class="badge bg-warning text-dark bg-opacity-50 rounded-pill">ค้าง ฿${memRemain.toLocaleString()}</span>`;
         }
 
         const item = document.createElement('div');
