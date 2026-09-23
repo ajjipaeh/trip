@@ -216,7 +216,26 @@ function updateLiveStatus() {
     if(latest) {
         alertBox.classList.remove('d-none');
         let teamName = otherTeam === 'teamKKC' ? '🦖 ทีมขอนแก่น' : '🌊 ทีมระยอง';
-        let desc = `เช็คอินล่าสุด: <b>${latest.name}</b> (${latest.time} น.)`;
+        
+        // นำ timestamp มาแปลงเป็น Object วันที่
+        let dateObj = new Date(latest.timestamp);
+        
+        // แปลงวันที่ให้อยู่ในรูปแบบไทย (เช่น 23 กันยายน 2569)
+        let thaiDate = dateObj.toLocaleDateString('th-TH', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        
+        // แปลงเวลา (เช่น 17:23:34)
+        let thaiTime = dateObj.toLocaleTimeString('th-TH', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+        
+        // นำมาประกอบกัน
+        let desc = `เช็คอินล่าสุด: <b>${latest.name}</b> <br><small class="text-muted">( ${thaiDate} เวลา ${thaiTime} น. )</small>`;
         
         document.getElementById('live-status-title').innerText = `👀 อัปเดตจาก ${teamName}`;
         document.getElementById('live-status-desc').innerHTML = desc;
