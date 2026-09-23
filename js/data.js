@@ -32,11 +32,14 @@ const tripsData = [
                 members: ["มายด์", "ซีแพค", "ป๊อปอาย", "ไทเกอร์", "ลีโอ", "หญิง", "ทราย", "พายุ"],
                 gmapLink: "https://maps.app.goo.gl/GPD8kcRoCKNAAWD16?g_st=ic",
                 path: [
-                    { id: 1, name: "รับทรายที่บ้าน + ซื้อเบียร์ร้านพายุ", type: "start", durationMinutes: 0, lat: 16.0594, lng: 102.7297, gmapLink: "https://maps.app.goo.gl/..." },
-                    { id: 2, name: "ออกจากบ้านไผ่ + แวะรับหญิงที่โนนศิลา", type: "stop", durationMinutes: 30, lat: 15.9750, lng: 102.6711, gmapLink: "https://maps.app.goo.gl/..." },
-                    { id: 3, name: "แวะซื้อของสดที่แม็คโครปากช่อง", type: "stop", durationMinutes: 210, lat: 14.6865, lng: 101.4063, gmapLink: "https://maps.app.goo.gl/..." },
-                    { id: 4, name: "แวะคาเฟ่ (สตาร์ดอย หรือ ฮารุโดท)", type: "stop", durationMinutes: 50, lat: 14.5379, lng: 101.4005, gmapLink: "https://maps.app.goo.gl/..." },
-                    { id: 5, name: "เช็คอินบ้านพัก Verona", type: "end", durationMinutes: 100, lat: 14.5000, lng: 101.4000, gmapLink: "https://maps.app.goo.gl/..." }
+                    { id: 1, name: "รับทรายที่บ้าน + ซื้อเบียร์ร้านพายุ", type: "start", durationMinutes: 0, lat: 16.056453374435712, lng:  102.72641009074128, gmapLink: "https://maps.app.goo.gl/Y3JJLqtDVHX1Df9GA" },
+                    { id: 2, name: "แวะรับหญิงที่โนนศิลา", type: "stop", durationMinutes: 20, lat: 15.96474185282544, lng: 102.69165938650796, gmapLink: "https://maps.app.goo.gl/t9AQvJ4ypudx434h7" },
+                    { id: 3, name: "แวะปั๊มแรก ปตท.พี โอ ออยล์ สาขาคง", type: "stop", durationMinutes: 80, lat: 15.319918, lng: 102.434115, gmapLink: "https://maps.app.goo.gl/MJbG99ZXbjJHKZbr6" },
+                    { id: 4, name: "แวะปั๊มสอง ปตท.ปากช่องไฮเวย์ PTT", type: "stop", durationMinutes: 200, lat: 14.666410038015002, lng: 101.43362817670122, gmapLink: "https://maps.app.goo.gl/hd5WhcNvK3bUq5nw8" },
+                    { id: 5, name: "แม็คโคร ฟู้ดเซอร์วิส ปากช่อง", type: "stop", durationMinutes: 10, lat: 14.649498281735688, lng: 101.40860424071239, gmapLink: "https://maps.app.goo.gl/fgYNysHgUzoAyqSC9" },
+                    { id: 6, name: "สตาร์ดอยฟาร์ม เขาใหญ่", type: "stop", durationMinutes: 60, lat: 14.54631659774482, lng: 101.44430391327381, gmapLink: "https://maps.app.goo.gl/DxTp2XQFdmWeJkxR8" },
+                    { id: 7, name: "ฮารุโดท เขาใหญ่", type: "stop", durationMinutes: 40, lat: 14.531163182762413, lng: 101.52129128383615, gmapLink: "https://maps.app.goo.gl/7WLGXCa6Le2SsJB77" },
+                    { id: 8, name: "เช็คอินบ้านพัก Verona", type: "end", durationMinutes: 30, lat: 14.53411601033038, lng: 101.49329343778123, gmapLink: "https://maps.app.goo.gl/oS4QUVV9L1thdApJ6" }
                 ]
             },
             teamRYG: {
@@ -46,10 +49,14 @@ const tripsData = [
                 members: ["ตอง", "แฟนตอง", "อาร์", "แฟนอาร์", "ออมสิน", "บิ๊ก"],
                 gmapLink: "https://maps.app.goo.gl/...",
                 path: [
-                    // จำลองจุดแวะทีมระยองไปก่อน (สามารถมาแก้ทีหลังได้)
-                    { id: 1, name: "จุดนัดพบ (ระยอง/ชลบุรี)", type: "start", durationMinutes: 0, lat: 12.6814, lng: 101.2816, gmapLink: "https://maps.app.goo.gl/..." },
-                    { id: 2, name: "แวะพักซื้อกาแฟ มอเตอร์เวย์", type: "stop", durationMinutes: 120, lat: 13.5283, lng: 101.0000, gmapLink: "https://maps.app.goo.gl/..." },
-                    { id: 3, name: "เช็คอินบ้านพัก Verona", type: "end", durationMinutes: 150, lat: 14.5000, lng: 101.4000, gmapLink: "https://maps.app.goo.gl/..." }
+                    // จำลองจุดแวะทีมระยองไปก่อน
+                    { id: 1, name: "จุดนัดพบ ปตท.ชลบุรีสันติสุข", type: "start", durationMinutes: 0, lat: 13.394958002682014, lng: 101.00882462909475, gmapLink: "https://maps.app.goo.gl/qZF4MJZrzT4kjiUJ7" },
+                    { id: 2, name: "แวะรับออมสิน ไอทีสแคว์หลักสี่", type: "stop", durationMinutes: 130, lat: 13.5283, lng: 101.0000, gmapLink: "https://maps.app.goo.gl/XWqrnUDGmBvG7tkL7" },
+                    { id: 3, name: "ปตท.สระบุรี แวะอีกแล้ว เขียนไปก่อนอิอิ", type: "stop", durationMinutes: 150, lat: 14.553783576329455, lng: 100.96621460282084, gmapLink: "https://maps.app.goo.gl/mJMP53HXRjMSfUANA" },
+                    { id: 4, name: "แม็คโคร ฟู้ดเซอร์วิส ปากช่อง", type: "stop", durationMinutes: 50, lat: 14.649498281735688, lng: 101.40860424071239, gmapLink: "https://maps.app.goo.gl/fgYNysHgUzoAyqSC9" },
+                    { id: 5, name: "สตาร์ดอยฟาร์ม เขาใหญ่", type: "stop", durationMinutes: 60, lat: 14.54631659774482, lng: 101.44430391327381, gmapLink: "https://maps.app.goo.gl/DxTp2XQFdmWeJkxR8" },
+                    { id: 6, name: "ฮารุโดท เขาใหญ่", type: "stop", durationMinutes: 40, lat: 14.531163182762413, lng: 101.52129128383615, gmapLink: "https://maps.app.goo.gl/7WLGXCa6Le2SsJB77" },
+                    { id: 7, name: "เช็คอินบ้านพัก Verona", type: "end", durationMinutes: 30, lat: 14.53411601033038, lng: 101.49329343778123, gmapLink: "https://maps.app.goo.gl/oS4QUVV9L1thdApJ6" }
                 ]
             }
         }
