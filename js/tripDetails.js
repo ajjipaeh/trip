@@ -1,9 +1,42 @@
-// --- ตัวแปรสำหรับแผนที่ Leaflet ---
+// --- ตัวแปรสำหรับแผนที่ Leaflet และ Backend ---
+// const API_URL = 'https://script.google.com/macros/s/AKfycbw3Ad2IF2oUhRXNA6kQj2iVjnORbslQ3N2PcMWMBH6-GpC4b-ZsAdBSv43pzSd9MIGtow/exec'; // ⚠️ เปลี่ยนเป็น URL ของ Apps Script ตัวเอง
 let previewMap = null;
 let mapMarkers = [];
 let currentActiveTrip = null;
 let currentActiveTeam = 'teamKKC'; 
 let myTeam = ''; 
+let syncInterval = null;
+
+// ================= ระบบ Sync Server (ดึงข้อมูล 5 นาที) =================
+window.syncDataFromServer = function() {
+    fetch(API_URL)
+        .then(res => res.json())
+        .then(data => {
+            // อัปเดตลง localStorage ของเครื่อง
+            if(data.tripCheckins) localStorage.setItem('tripCheckins', JSON.stringify(data.tripCheckins));
+            if(data.tripMergeDecisions) localStorage.setItem('tripMergeDecisions', JSON.stringify(data.tripMergeDecisions));
+            if(data.tripDynamicMerges) localStorage.setItem('tripDynamicMerges', JSON.stringify(data.tripDynamicMerges));
+            
+            // รีเรนเดอร์ Timeline ถ้ากำลังดูแผนที่อยู่
+            if (currentActiveTrip && !document.getElementById('page-trip-details').classList.contains('d-none')) {
+                const timeVal = document.getElementById('simulator-time').value;
+                const modeInput = document.querySelector('input[name="timeMode"]:checked');
+                window.calculateAndRenderTimeline(timeVal, modeInput ? modeInput.value : 'start');
+            }
+        })
+        .catch(err => console.error("Sync error:", err));
+};
+
+// ================= ฟังก์ชันบันทึกลง API =================
+function sendPostToAPI(payload) {
+    // ใช้ text/plain เพื่อเลี่ยงปัญหา CORS preflight
+    fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+    }).catch(e => console.log('Error saving to API:', e));
+}
+
 
 // 1. ฟังก์ชันเปิดหน้ารายละเอียด
 window.openTripDetails = function(tripId) {
@@ -49,19 +82,25 @@ window.openTripDetails = function(tripId) {
     
     let defaultTime = '07:30';
     document.getElementById('simulator-time').value = defaultTime;
+    
+    // โหลดข้อมูลล่าสุดจากเซิร์ฟเวอร์ทุกครั้งที่กดเข้าดูทริป
+    window.syncDataFromServer();
     window.calculateAndRenderTimeline(defaultTime, 'start');
 };
 
 // ================= ฟังก์ชันเคลียร์ค่า (เฉพาะแอดมิน) =================
 window.resetCheckins = function() {
     Swal.fire({
-        title: 'ล้างข้อมูลทั้งหมด?', text: 'จะล้างสถานะการเช็คอินและการตัดสินใจทั้งหมด', icon: 'warning',
+        title: 'ล้างข้อมูลทั้งหมด?', text: 'จะล้างสถานะการเช็คอินและการตัดสินใจทั้งหมดทั้งบนเว็บและเซิร์ฟเวอร์', icon: 'warning',
         showCancelButton: true, confirmButtonColor: '#dc3545', confirmButtonText: 'ใช่, ล้างเลย'
     }).then((result) => {
         if (result.isConfirmed) {
             localStorage.removeItem('tripCheckins');
             localStorage.removeItem('tripMergeDecisions');
-            localStorage.removeItem('tripDynamicMerges'); // ล้างจุดรวมพลที่ถูกย้ายด้วย
+            localStorage.removeItem('tripDynamicMerges'); 
+            
+            // ส่งคำสั่งลบไปที่ Google Sheet
+            sendPostToAPI({ action: 'resetAll' });
             
             const now = new Date();
             const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
@@ -79,13 +118,10 @@ window.handleCheckIn = function(team, stopId, stopIndex, isOriginalMergePoint, s
     let mergeData = JSON.parse(localStorage.getItem('tripMergeDecisions')) || {};
     let dynamicMerges = JSON.parse(localStorage.getItem('tripDynamicMerges')) || [];
     
-    // เช็คว่าจุดนี้คือจุดรวมพลหรือไม่ (ทั้งที่ตั้งค่าไว้แต่แรก และที่ถูกย้ายมาใหม่)
     let isMergePoint = isOriginalMergePoint || dynamicMerges.includes(stopName);
 
     if(isMergePoint) {
-        // ใช้ "ชื่อสถานที่ (stopName)" เป็น Key แทน ID เพื่อให้ 2 ทีมเชื่อมกันได้เป๊ะๆ
         if(!mergeData[stopName]) {
-            // ทีมแรกที่มาถึง มีสิทธิ์เลือก!
             Swal.fire({
                 title: '🤝 ถึงจุดรวมพลแล้ว!',
                 html: `คุณเป็นทีมแรกที่มาถึง <b>${stopName}</b><br>จะรอเพื่อนที่นี่ หรือไปรวมจุดถัดไปแทน?`,
@@ -100,13 +136,14 @@ window.handleCheckIn = function(team, stopId, stopIndex, isOriginalMergePoint, s
                 let nextStopName = null;
                 
                 if (decision === 'next') {
-                    // หาชื่อสถานที่ถัดไปเพื่อย้ายจุดรวมพล
                     const path = currentActiveTrip.routes[team].path;
                     if (stopIndex + 1 < path.length) {
                         nextStopName = path[stopIndex + 1].name;
                         if (!dynamicMerges.includes(nextStopName)) {
-                            dynamicMerges.push(nextStopName); // บันทึกจุดรวมพลใหม่
+                            dynamicMerges.push(nextStopName);
                             localStorage.setItem('tripDynamicMerges', JSON.stringify(dynamicMerges));
+                            // บันทึกจุดย้ายรวมพลลง API
+                            sendPostToAPI({ action: 'addDynamicMerge', stopName: nextStopName });
                         }
                     }
                 }
@@ -115,11 +152,13 @@ window.handleCheckIn = function(team, stopId, stopIndex, isOriginalMergePoint, s
                 mergeData[stopName] = { by: team, decision: decision, nextStop: nextStopName };
                 localStorage.setItem('tripMergeDecisions', JSON.stringify(mergeData));
                 
+                // ส่งการตัดสินใจลง API
+                sendPostToAPI({ action: 'addMergeDecision', stopName: stopName, by: team, decision: decision, nextStop: nextStopName });
+                
                 saveCheckIn(team, stopIndex, timeStr, stopName);
                 Swal.fire('บันทึกการตัดสินใจแล้ว!', result.isConfirmed ? 'สั่งเสบียงรอเลย!' : `ย้ายจุดรวมพลไปที่ ${nextStopName || 'ปลายทาง'} แล้ว!`, 'success');
             });
         } else {
-            // ทีมที่สองมาถึง (ไม่มีสิทธิ์เลือกแล้ว เช็คอินได้อย่างเดียว)
             saveCheckIn(team, stopIndex, timeStr, stopName);
             let teamDisplay = mergeData[stopName].by === 'teamKKC' ? 'ทีมขอนแก่น' : 'ทีมระยอง';
             let dText = mergeData[stopName].decision === 'wait' 
@@ -129,7 +168,6 @@ window.handleCheckIn = function(team, stopId, stopIndex, isOriginalMergePoint, s
             Swal.fire('📍 เช็คอินสำเร็จ!', dText, 'info');
         }
     } else {
-        // เช็คอินจุดปกติ
         saveCheckIn(team, stopIndex, timeStr, stopName);
         Swal.fire({ title: '📍 เช็คอินสำเร็จ!', text: `คุณอยู่ที่ ${stopName}`, icon: 'success', timer: 1500, showConfirmButton: false });
     }
@@ -138,16 +176,26 @@ window.handleCheckIn = function(team, stopId, stopIndex, isOriginalMergePoint, s
 function saveCheckIn(team, stopIndex, timeStr, stopName) {
     let data = JSON.parse(localStorage.getItem('tripCheckins')) || {};
     const path = currentActiveTrip.routes[team].path;
+    let newCheckins = [];
     
     // ✅ ออโต้เช็คอินย้อนหลัง (ถ้ากดข้ามจุด)
     for (let i = 0; i <= stopIndex; i++) {
-        let sId = path[i].id; // ใช้ ID สำหรับการบันทึกสถานะว่าผ่านจุดไหนบ้าง
+        let sId = path[i].id; 
         if (!data[`${team}_${sId}`]) {
-            data[`${team}_${sId}`] = { time: timeStr, name: path[i].name, timestamp: Date.now() - (stopIndex - i) };
+            let timestamp = Date.now() - (stopIndex - i);
+            data[`${team}_${sId}`] = { time: timeStr, name: path[i].name, timestamp: timestamp };
+            // เก็บข้อมูลที่พึ่งเช็คอินเพื่อเตรียมส่ง API
+            newCheckins.push({ team: team, stopId: sId, time: timeStr, stopName: path[i].name, timestamp: timestamp });
         }
     }
     
     localStorage.setItem('tripCheckins', JSON.stringify(data));
+    
+    // ยิง API สำหรับ Check-in ชุดใหม่
+    if(newCheckins.length > 0) {
+        sendPostToAPI({ action: 'addCheckins', data: newCheckins });
+    }
+
     document.getElementById('simulator-time').value = timeStr;
     document.getElementById('mode-start').checked = true;
     window.calculateAndRenderTimeline(timeStr, 'start');
@@ -198,7 +246,6 @@ window.calculateAndRenderTimeline = function(baseTime, mode) {
     let mergeData = JSON.parse(localStorage.getItem('tripMergeDecisions')) || {};
     let dynamicMerges = JSON.parse(localStorage.getItem('tripDynamicMerges')) || [];
     
-    // หาจุดที่เช็คอินล่าสุด (Index สูงสุด)
     let latestCheckedIndex = -1;
     routePath.forEach((stop, index) => {
         if (checkinData[`${currentActiveTeam}_${stop.id}`]) latestCheckedIndex = index;
@@ -227,7 +274,6 @@ window.calculateAndRenderTimeline = function(baseTime, mode) {
         let isNextStop = (index === latestCheckedIndex + 1);
         let isNotStarted = (latestCheckedIndex === -1 && index === 0); 
         
-        // สถานะสีจุด
         let renderDotColor = isCheckedIn ? '#ccc' : baseDotColor; 
         let pulseClass = isCurrentLocation ? 'live-pulse' : ''; 
         if(isCurrentLocation) renderDotColor = '#dc3545'; 
@@ -236,7 +282,6 @@ window.calculateAndRenderTimeline = function(baseTime, mode) {
         if (isCurrentLocation) statusBadge = `<span class="badge bg-danger rounded-pill ms-2">📍 อยู่ที่นี่</span>`;
         if (isNextStop || isNotStarted) statusBadge = `<span class="badge bg-info text-dark rounded-pill ms-2"><i class="bi bi-truck van-moving"></i> กำลังไป...</span>`;
 
-        // 🌟 ลอจิกใหม่จุดรวมพล (ย้ายจุด & โชว์ข้อความ)
         let isMergePoint = stop.isMergePoint || dynamicMerges.includes(stop.name);
         let mergeInfo = '';
         
@@ -257,7 +302,6 @@ window.calculateAndRenderTimeline = function(baseTime, mode) {
             }
         }
 
-        // วาดหมุดลงแผนที่
         if (stop.lat && stop.lng) {
             let markerOpacity = (isCheckedIn && !isCurrentLocation) ? 0.5 : 1;
             const customIcon = L.divIcon({
@@ -273,7 +317,6 @@ window.calculateAndRenderTimeline = function(baseTime, mode) {
             mapBounds.push([stop.lat, stop.lng]);
         }
 
-        // จัดการปุ่ม
         let actionButtons = '';
         if (isReadOnly) {
             actionButtons = `<div class="alert alert-secondary text-center small py-2 mt-2 mb-0 border-0 rounded-pill"><i class="bi bi-eye"></i> โหมดสอดแนม (ดูได้อย่างเดียว)</div>`;
@@ -326,6 +369,11 @@ window.calculateAndRenderTimeline = function(baseTime, mode) {
 
 // 3. จัดการ Events ต่างๆ
 document.addEventListener('DOMContentLoaded', () => {
+    // เซ็ต Interval ให้ Sync ข้อมูลทุกๆ 5 นาที (300,000 มิลลิวินาที)
+    syncInterval = setInterval(window.syncDataFromServer, 300000);
+    // ดึงครั้งแรกเมื่อโหลดเว็บเสร็จ
+    window.syncDataFromServer(); 
+
     const btnBackTrips = document.getElementById('btn-back-trips');
     if (btnBackTrips) {
         btnBackTrips.addEventListener('click', () => {
