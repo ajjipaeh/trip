@@ -28,7 +28,15 @@ window.closeMiniGame = function() {
     document.getElementById('subpage-taptap').classList.add('d-none');
     document.getElementById('subpage-bombcup').classList.add('d-none');
     document.getElementById('subpage-kingscup').classList.add('d-none');
+    document.getElementById('subpage-buddy').classList.add('d-none');
+    
     if(taptapInterval) clearInterval(taptapInterval); // หยุดเวลาถ้ากดปิดกลางคัน
+
+    // ดึงหน้า Hub มินิเกม และ เมนูด้านล่าง กลับมาแสดง
+    document.getElementById('page-minigame').classList.remove('d-none');
+    
+    const bottomNav = document.querySelector('.bottom-nav');
+    if (bottomNav) bottomNav.classList.remove('d-none');
 };
 
 // --- ระบบ วงล้อคู่ (Double Roulette) ---
