@@ -51,7 +51,7 @@ const tripsData = [
                 path: [
                     // จำลองจุดแวะทีมระยองไปก่อน
                     { id: 1, name: "จุดนัดพบ ปตท.ชลบุรีสันติสุข", type: "start", durationMinutes: 0, lat: 13.394958002682014, lng: 101.00882462909475, gmapLink: "https://maps.app.goo.gl/qZF4MJZrzT4kjiUJ7" },
-                    { id: 2, name: "แวะรับออมสิน ไอทีสแคว์หลักสี่", type: "stop", durationMinutes: 130, lat: 13.5283, lng: 101.0000, gmapLink: "https://maps.app.goo.gl/XWqrnUDGmBvG7tkL7" },
+                    { id: 2, name: "แวะรับออมสิน ไอทีสแคว์หลักสี่", type: "stop", durationMinutes: 130, lat: 13.885538525122152, lng: 100.58197415179738, gmapLink: "https://maps.app.goo.gl/XWqrnUDGmBvG7tkL7" },
                     { id: 3, name: "ปตท.สระบุรี แวะอีกแล้ว เขียนไปก่อนอิอิ", type: "stop", durationMinutes: 150, lat: 14.553783576329455, lng: 100.96621460282084, gmapLink: "https://maps.app.goo.gl/mJMP53HXRjMSfUANA" },
                     { id: 4, name: "แม็คโคร ฟู้ดเซอร์วิส ปากช่อง", type: "stop", isMergePoint: true, durationMinutes: 50, lat: 14.649498281735688, lng: 101.40860424071239, gmapLink: "https://maps.app.goo.gl/fgYNysHgUzoAyqSC9" },
                     { id: 5, name: "สตาร์ดอยฟาร์ม เขาใหญ่", type: "stop", durationMinutes: 60, lat: 14.54631659774482, lng: 101.44430391327381, gmapLink: "https://maps.app.goo.gl/DxTp2XQFdmWeJkxR8" },
