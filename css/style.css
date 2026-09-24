@@ -1,3 +1,6 @@
+/* noto sans thai */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&display=swap');
+
 /* ตั้งค่าสีและฟอนต์สไตล์ iOS */
 :root {
     --color-1: #C0E1D2;
@@ -9,7 +12,8 @@
 body {
     /* ใช้ฟอนต์ระบบของ Apple ถ้าเปิดใน iOS/Mac จะได้ฟอนต์เป๊ะมาก */
     /* font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; */
-    font-family: 'Prompt', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    /* font-family: 'Prompt', -apple-system, BlinkMacSystemFont, sans-serif !important; */
+    font-family: 'Noto Sans Thai', -apple-system, BlinkMacSystemFont, sans-serif !important;
     margin: 0;
     padding: 0;
     height: 100vh;
