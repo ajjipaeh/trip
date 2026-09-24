@@ -273,6 +273,17 @@ window.calculateAndRenderTimeline = function(baseTime, mode) {
     const themeColorClass = activeRouteData.theme === 'mint' ? 'marker-mint' : 'marker-pink';
     let baseDotColor = activeRouteData.theme === 'mint' ? 'var(--color-1)' : 'var(--color-4)';
 
+    // อัปเดตลิงก์ Google Maps ของทีมนั้น
+    const btnFullRoute = document.getElementById('btn-full-route');
+    if (btnFullRoute) {
+        if (activeRouteData.gmapLink) {
+            btnFullRoute.href = activeRouteData.gmapLink;
+            btnFullRoute.classList.remove('d-none');
+        } else {
+            btnFullRoute.classList.add('d-none');
+        }
+    }
+    
     let checkinData = JSON.parse(localStorage.getItem('tripCheckins')) || {};
     let mergeData = JSON.parse(localStorage.getItem('tripMergeDecisions')) || {};
     let dynamicMerges = JSON.parse(localStorage.getItem('tripDynamicMerges')) || [];
