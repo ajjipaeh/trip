@@ -10,6 +10,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const elMinutes = document.getElementById('cd-minutes');
         const elSeconds = document.getElementById('cd-seconds');
 
+        // ตัวแปรสำหรับกล่องที่ต้องการซ่อนเมื่อเหลือน้อยกว่า 1 วัน
+        const boxDays = document.getElementById('box-days');
+        const sepDays = document.getElementById('sep-days');
+
         if (distance > 0) {
             // คำนวณ วัน ชม นาที วินาที
             const days = Math.floor(distance / (1000 * 60 * 60 * 24));
@@ -22,12 +26,30 @@ document.addEventListener('DOMContentLoaded', () => {
             if(elHours) elHours.textContent = String(hours).padStart(2, '0');
             if(elMinutes) elMinutes.textContent = String(minutes).padStart(2, '0');
             if(elSeconds) elSeconds.textContent = String(seconds).padStart(2, '0');
+
+            // 🌟 เช็คว่าถ้า days เหลือ 0 ให้ซ่อนกล่อง "วัน"
+            if (boxDays && sepDays) {
+                if (days <= 0) {
+                    boxDays.classList.add('d-none');
+                    sepDays.classList.add('d-none');
+                } else {
+                    boxDays.classList.remove('d-none');
+                    sepDays.classList.remove('d-none');
+                }
+            }
+
         } else {
-            // กรณีถึงวันทริปแล้ว
+            // กรณีถึงวันทริปแล้ว (เวลาหมด)
             if(elDays) elDays.textContent = "0";
             if(elHours) elHours.textContent = "00";
             if(elMinutes) elMinutes.textContent = "00";
             if(elSeconds) elSeconds.textContent = "00";
+
+            // ถ้าถึงวันทริปแล้ว ก็ซ่อนกล่อง "วัน" ไปเลยเหมือนกัน
+            if (boxDays && sepDays) {
+                boxDays.classList.add('d-none');
+                sepDays.classList.add('d-none');
+            }
         }
     }
     

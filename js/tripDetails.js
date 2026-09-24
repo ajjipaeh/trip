@@ -43,6 +43,18 @@ window.openTripDetails = function(tripId) {
     currentActiveTrip = tripsData.find(t => t.id === tripId);
     if(!currentActiveTrip) return;
 
+    // 🌟 ดักจับทริปในอนาคต (ถ้า status เป็น future ให้เด้ง Alert และหยุดการทำงาน) 🌟
+    if (currentActiveTrip.status === 'future') {
+        Swal.fire({
+            title: 'อดใจรอหน่อยน้าา 🥺',
+            text: 'ทริปนี้ยังไม่เปิดให้ดูรายละเอียด เตรียมตัวสำหรับทริปปัจจุบันก่อนนะวัยรุ่น!',
+            icon: 'info',
+            confirmButtonColor: 'var(--color-4)',
+            confirmButtonText: 'โอเคจ้ารับทราบ!'
+        });
+        return; // สั่ง return เพื่อหยุด ไม่ให้เปิดหน้าถัดไป
+    }
+
     document.querySelectorAll('.page-section').forEach(page => page.classList.add('d-none'));
     const bottomNav = document.querySelector('.bottom-nav');
     if (bottomNav) bottomNav.classList.add('d-none');

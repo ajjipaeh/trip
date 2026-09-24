@@ -45,53 +45,62 @@
         <!-- พื้นที่แสดงเนื้อหาหลัก (มี Padding ด้านล่างไม่ให้โดนเมนูทับ) -->
         <div class="content-area">
             
-            <!-- หน้า 1: Dashboard -->
-            <div id="page-dashboard" class="page-section active">
-                <div class="container pt-5 pb-4">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h2 class="fw-bold mb-0" id="welcome-text">สวัสดี!</h2>
-                        <button id="btnLogout" class="btn btn-sm btn-outline-danger rounded-pill"><i class="bi bi-box-arrow-right"></i> ออก</button>
-                    </div>
+            <!-- หน้า 1: Dashboard (Minimalist & Hero Focus) -->
+            <div id="page-dashboard" class="page-section active position-relative" style="height: 100vh;">
+                
+                <!-- ฟองอากาศลอยๆ -->
+                <div class="bubbles-container">
+                    <div class="bubble" style="left: 10%; width: 40px; height: 40px; animation-duration: 8s; animation-delay: 0s;"></div>
+                    <div class="bubble" style="left: 30%; width: 70px; height: 70px; animation-duration: 12s; animation-delay: 2s;"></div>
+                    <div class="bubble" style="left: 60%; width: 50px; height: 50px; animation-duration: 9s; animation-delay: 5s;"></div>
+                    <div class="bubble" style="left: 85%; width: 90px; height: 90px; animation-duration: 15s; animation-delay: 1s;"></div>
+                </div>
 
-                    <!-- การ์ดนับถอยหลังทริปถัดไป -->
-                    <div class="glass-card p-4 mb-4 text-center">
-                        <h5 class="text-muted mb-3"><i class="bi bi-geo-alt-fill text-danger"></i> ทริปถัดไป: เขาใหญ่</h5>
-                        
-                        <!-- เปลี่ยนจาก gap-3 เป็น gap-2 เพื่อให้เบียดกันนิดนึง และเพิ่ม flex-fill -->
-                        <div class="d-flex justify-content-center gap-2 mb-3">
-                            <div class="countdown-box flex-fill">
-                                <h2 class="mb-0 fw-bold" id="cd-days">--</h2>
-                                <small>วัน</small>
-                            </div>
-                            <div class="countdown-box flex-fill">
-                                <h2 class="mb-0 fw-bold" id="cd-hours">--</h2>
-                                <small>ชม.</small>
-                            </div>
-                            <div class="countdown-box flex-fill">
-                                <h2 class="mb-0 fw-bold" id="cd-minutes">--</h2>
-                                <small>นาที</small>
-                            </div>
-                            <div class="countdown-box flex-fill">
-                                <h2 class="mb-0 fw-bold" id="cd-seconds">--</h2>
-                                <small>วินาที</small>
-                            </div>
+                <!-- ปุ่มออกระบบ ซ่อนเนียนๆ มุมขวาบน -->
+                <div class="position-absolute top-0 end-0 p-4" style="z-index: 10;">
+                    <button id="btnLogout" class="btn btn-link text-dark opacity-50 p-0 shadow-none"><i class="bi bi-box-arrow-right fs-3"></i></button>
+                </div>
+
+                <!-- พื้นที่ตรงกลางจอ (Focus Area) -->
+                <div class="container h-100 d-flex flex-column justify-content-center align-items-center text-center" style="padding-bottom: 80px;">
+                    
+                    <!-- คำทักทายเรียบๆ -->
+                    <p class="mb-0 text-dark opacity-75 fw-bold" id="welcome-text" style="letter-spacing: 1px; font-size: 0.9rem;">สวัสดี</p>
+                    
+                    <!-- ชื่อทริปใหญ่เบิ้ม (Hero Typography) -->
+                    <h1 class="display-1 fw-bold mb-5" style="letter-spacing: 2px; color: var(--color-4); text-shadow: 0 10px 20px rgba(255,255,255,0.8); font-size: 4rem;">เขาใหญ่</h1>
+
+                    <!-- เค้าท์ดาวน์แบบ ไร้กรอบ (Minimal Digital Clock) -->
+                    <div class="d-flex justify-content-center align-items-center gap-2 mb-5 w-100 px-1">
+                        <div class="text-center flex-fill" id="box-days">
+                            <h1 class="fw-bold mb-0" id="cd-days" style="font-size: 2.2rem; color: var(--color-4); text-shadow: 0 4px 10px rgba(220,53,69,0.2);">--</h1>
+                            <small class="text-muted fw-bold">วัน</small>
                         </div>
+                        <h2 class="fw-light text-muted opacity-25 mb-4" id="sep-days">:</h2>
                         
-                        <p class="mb-0 small fw-bold text-dark">📅 7 พฤศจิกายน 2569</p>
+                        <div class="text-center flex-fill">
+                            <h1 class="fw-bold mb-0" id="cd-hours" style="font-size: 2.2rem; color: var(--color-4); text-shadow: 0 4px 10px rgba(220,53,69,0.2);">--</h1>
+                            <small class="text-muted fw-bold">ชม.</small>
+                        </div>
+                        <h2 class="fw-light text-muted opacity-25 mb-4">:</h2>
+                        
+                        <div class="text-center flex-fill">
+                            <h1 class="fw-bold mb-0" id="cd-minutes" style="font-size: 2.2rem; color: var(--color-4); text-shadow: 0 4px 10px rgba(220,53,69,0.2);">--</h1>
+                            <small class="text-muted fw-bold">นาที</small>
+                        </div>
+                        <h2 class="fw-light text-muted opacity-25 mb-4">:</h2>
+                        
+                        <div class="text-center flex-fill">
+                            <h1 class="fw-bold mb-0" id="cd-seconds" style="font-size: 2.2rem; color: var(--color-4); text-shadow: 0 4px 10px rgba(220,53,69,0.2);">--</h1>
+                            <small class="text-muted fw-bold">วินาที</small>
+                        </div>
                     </div>
 
-                    <!-- ข้อมูลด่วน -->
-                    <div class="glass-card p-3 text-start">
-                        <h6 class="fw-bold border-bottom pb-2 mb-3">📌 ข้อมูลนัดหมายด่วน</h6>
-                        <p class="mb-2 small"><i class="bi bi-clock"></i> <strong>เวลา:</strong> 07:00 น. (ล้อหมุน)</p>
-                        <p class="mb-2 small"><i class="bi bi-car-front-fill"></i> <strong>รถ:</strong> ทั้งหมด 4 คัน</p>
-                        <p class="mb-0 small"><i class="bi bi-cloud-sun-fill text-warning"></i> <strong>อากาศ:</strong> แดดจัด 32°C ☀️</p>
+                    <!-- ป้ายวันที่แบบ Glass Pill เล็กๆ น่ารักๆ -->
+                    <div class="glass-card rounded-pill px-4 py-2 shadow-sm d-inline-flex align-items-center gap-2 border-0" style="background: rgba(255,255,255,0.3);">
+                        <i class="bi bi-calendar2-heart text-danger"></i>
+                        <span class="fw-bold text-dark small">7 พฤศจิกายน 2569</span>
                     </div>
-
-                    <!-- บัญชีกองกลางทริป -->
-                    <button class="btn btn-ios w-100 fw-bold py-3 mt-3 shadow-sm d-flex align-items-center justify-content-center gap-2" onclick="openFundPage()">
-                        <i class="bi bi-wallet2 fs-5"></i> บัญชีกองกลางทริป
-                    </button>
                 </div>
             </div>
 
@@ -481,6 +490,26 @@
                 <div id="detail-cover" class="detail-cover"></div>
 
                 <div class="container pb-5 mt-4">
+                    <div class="row g-3 mb-4">
+                        <!-- ข้อมูลด่วน -->
+                        <div class="col-12">
+                            <div class="glass-card p-3 text-start">
+                                <h6 class="fw-bold border-bottom pb-2 mb-3"><i class="bi bi-pin-angle-fill text-danger"></i> ข้อมูลนัดหมายด่วน</h6>
+                                <p class="mb-2 small"><i class="bi bi-clock"></i> <strong>เวลา:</strong> 07:00 น. (ล้อหมุน)</p>
+                                <p class="mb-2 small"><i class="bi bi-car-front-fill"></i> <strong>รถ:</strong> ทั้งหมด 5 คัน</p>
+                                <p class="mb-0 small"><i class="bi bi-cloud-sun-fill text-warning"></i> <strong>อากาศ:</strong> แดดจัด 32°C ☀️</p>
+                            </div>
+                        </div>
+                        
+                        <!-- บัญชีกองกลางทริป -->
+                        <div class="col-12">
+                            <button class="btn w-100 fw-bold py-3 shadow-sm d-flex align-items-center justify-content-center gap-2" 
+                                    style="background: linear-gradient(135deg, var(--color-1), #81d4fa); color: #000; border-radius: 16px;" 
+                                    onclick="openFundPage()">
+                                <i class="bi bi-wallet2 fs-4"></i> จัดการบัญชีกองกลาง
+                            </button>
+                        </div>
+                    </div>
                     <!-- ปุ่มสลับทีม (Smart Tabs) สไตล์ iOS -->
                     <div class="ios-segmented-control mb-3">
                         <input type="radio" name="teamSelect" id="tab-teamKKC" value="teamKKC" checked>
@@ -555,7 +584,7 @@
         </div>
 
         <!-- แถบเมนูด้านล่าง (Bottom Navigation) -->
-        <nav class="bottom-nav glass-nav">
+        <nav class="bottom-nav">
             <div class="nav-item active" data-target="page-dashboard">
                 <i class="bi bi-house-door-fill"></i>
                 <span>หน้าหลัก</span>

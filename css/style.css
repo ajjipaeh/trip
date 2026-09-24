@@ -8,8 +8,8 @@
 
 body {
     /* ใช้ฟอนต์ระบบของ Apple ถ้าเปิดใน iOS/Mac จะได้ฟอนต์เป๊ะมาก */
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    /* font-family: 'Prompt', -apple-system, BlinkMacSystemFont, sans-serif !important; */
+    /* font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; */
+    font-family: 'Prompt', -apple-system, BlinkMacSystemFont, sans-serif !important;
     margin: 0;
     padding: 0;
     height: 100vh;
@@ -86,19 +86,24 @@ body {
     padding-bottom: 90px; /* เว้นที่ไว้ให้ Bottom Nav */
 }
 
-/* แถบเมนูด้านล่างสไตล์ iOS */
+/* --- เมนูด้านล่าง (Floating Glass Dock) --- */
 .bottom-nav {
     position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
+    bottom: 20px; /* ยกลอยขึ้นจากขอบจอ 20px */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 400px;
+    background: rgba(255, 255, 255, 0.6); /* โปร่งแสง */
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 40px; /* โค้งมนแบบแคปซูลสุดๆ */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); /* เงาฟุ้งๆ นุ่มนวล */
     display: flex;
     justify-content: space-around;
-    padding: 10px 0 calc(10px + env(safe-area-inset-bottom)); /* รองรับรอยบาก iPhone */
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-top: 1px solid rgba(255, 255, 255, 0.5);
+    align-items: center;
+    padding: 10px 20px;
     z-index: 1000;
 }
 
@@ -106,26 +111,51 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    color: #999;
+    justify-content: center;
+    color: #a0aab5; /* สีเทาอ่อนตอนยังไม่เลือก */
     cursor: pointer;
-    transition: color 0.3s, transform 0.2s;
-    width: 30%;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* แอนิเมชันเด้งๆ */
+    position: relative;
+    padding: 8px 10px;
 }
 
 .nav-item i {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     margin-bottom: 2px;
+    transition: all 0.3s ease;
 }
 
 .nav-item span {
-    font-size: 0.7rem;
-    font-weight: 500;
+    font-size: 0.65rem;
+    font-weight: 700;
+    transition: all 0.3s ease;
 }
 
-/* สไตล์เมื่อเมนูถูกเลือก */
+/* สถานะตอนถูกเลือก (Active) */
 .nav-item.active {
-    color: var(--color-4); /* ใช้สีชมพูตุ่นเป็นตัวไฮไลท์ */
-    transform: scale(1.05);
+    color: var(--color-4); /* ใช้สีชมพู/แดง ของธีม */
+}
+
+/* ทำให้ไอคอนเด้งขึ้น และมีจุดเล็กๆ โผล่มาด้านล่าง */
+.nav-item.active i {
+    transform: translateY(-4px);
+    text-shadow: 0 5px 10px rgba(220, 53, 69, 0.3);
+}
+.nav-item::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background-color: var(--color-4);
+    opacity: 0;
+    transform: translateY(5px);
+    transition: all 0.3s ease;
+}
+.nav-item.active::after {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 /* สไตล์การ์ด Countdown */
@@ -697,4 +727,39 @@ canvas {
     color: #d81b60 !important;
     border: 1px solid #ffb8c6;
     font-size: 0.7rem;
+}
+
+/* --- แอนิเมชันพื้นหลังไล่สี (Dynamic Gradient) --- */
+.app-background {
+    background: linear-gradient(-45deg, #FFB8C6, #FCE8E8, #A3E4D7, #E0F7FA);
+    background-size: 400% 400%;
+    animation: gradientBG 15s ease infinite;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100vh;
+    z-index: -2;
+}
+@keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* --- ฟองอากาศลอยไปมา (Bubbles) --- */
+.bubbles-container {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none; /* เพื่อไม่ให้บังการกดปุ่ม */
+}
+.bubble {
+    position: absolute;
+    bottom: -100px;
+    background-color: rgba(255, 255, 255, 0.4);
+    border-radius: 50%;
+    animation: floatUp 10s infinite ease-in;
+}
+@keyframes floatUp {
+    0% { transform: translateY(0) scale(1); opacity: 1; }
+    100% { transform: translateY(-100vh) scale(1.5); opacity: 0; }
 }

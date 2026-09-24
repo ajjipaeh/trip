@@ -31,8 +31,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // 2. จัดการเมื่อกดการ์ด (ในส่วนของ Carousel)
             card.addEventListener('click', () => {
-                if (card.classList.contains('active-card') && trip.status !== 'past') {
+                if (card.classList.contains('active-card')) {
                     
+                    // 🌟 1. ดักจับทริปในอนาคต (future) 🌟
+                    if (trip.status === 'future') {
+                        Swal.fire({
+                            title: 'อดใจรอหน่อยน้าา 🥺',
+                            text: 'ทริปนี้ยังไม่เปิดให้ดูรายละเอียด เตรียมตัวสำหรับทริปปัจจุบันก่อนนะวัยรุ่น!',
+                            icon: 'info',
+                            confirmButtonColor: 'var(--color-4)',
+                            confirmButtonText: 'โอเคจ้ารับทราบ!'
+                        });
+                        return; // หยุดการทำงานตรงนี้ ไม่ไปต่อ
+                    }
+                    
+                    // 🌟 2. ดักจับทริปในอดีต (past) 🌟
+                    if (trip.status === 'past') {
+                         Swal.fire({
+                            title: 'ความทรงจำ 📸',
+                            text: `กำลังเปิดบันทึกทริป: ${trip.title}`,
+                            icon: 'info',
+                            showConfirmButton: false,
+                            timer: 1200
+                        }).then(() => {
+                            openTripDetails(trip.id); 
+                        });
+                        return; // หยุดการทำงานตรงนี้
+                    }
+                    
+                    // 🌟 3. ทริปปัจจุบัน (upcoming) 🌟
                     Swal.fire({
                         title: 'พร้อมลุย!',
                         text: `กำลังเปิดแพลน: ${trip.title}`,
@@ -40,19 +67,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         showConfirmButton: false,
                         timer: 1200
                     }).then(() => {
-                        // เดี๋ยวเราจะเรียกฟังก์ชันเปิดหน้ารายละเอียดทริปตรงนี้
                         openTripDetails(trip.id); 
-                        console.log("ไปหน้ารายละเอียดทริป ID:", trip.id);
                     });
 
-                } else if (!card.classList.contains('active-card')) {
+                } else {
                     card.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
             });
         });
 
         // 3. ใช้ IntersectionObserver เพื่อตรวจจับว่าการ์ดไหนอยู่ "ตรงกลางจอ"
-        // โดยตั้ง rootMargin ให้โฟกัสเฉพาะเส้นตรงกลาง
         const observerOptions = {
             root: carouselContainer,
             rootMargin: '-45% 0px -45% 0px', 
