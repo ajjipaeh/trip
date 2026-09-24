@@ -23,8 +23,7 @@ window.syncDataFromServer = function() {
                 const modeInput = document.querySelector('input[name="timeMode"]:checked');
                 window.calculateAndRenderTimeline(timeVal, modeInput ? modeInput.value : 'start');
             }
-        })
-        .catch(err => console.error("Sync error:", err));
+        }).catch(err => console.error("Sync error:", err));
 };
 
 // ================= ฟังก์ชันบันทึกลง API =================
