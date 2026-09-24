@@ -462,3 +462,289 @@ if(deck) {
         }, 200); // ดีเลย์นิดนึงให้ดูมีจังหวะจั่ว
     });
 }
+
+// ================= ระบบภารกิจลับ (Buddy Game) =================
+
+// อย่าลืมใส่ URL ของ Google Apps Script ของคุณที่นี่นะครับ!
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbw3Ad2IF2oUhRXNA6kQj2iVjnORbslQ3N2PcMWMBH6-GpC4b-ZsAdBSv43pzSd9MIGtow/exec'; 
+
+// 1. ฟังก์ชันเปิดหน้าเกมบัดดี้ (แบบดึงข้อมูลสดๆ Real-time)
+window.openBuddyGame = function() {
+    document.querySelectorAll('.page-section').forEach(page => page.classList.add('d-none'));
+    const bottomNav = document.querySelector('.bottom-nav');
+    if (bottomNav) bottomNav.classList.add('d-none');
+    
+    document.getElementById('subpage-buddy').classList.remove('d-none');
+    
+    // โชว์ Tutorial ถ้าเพิ่งเข้าครั้งแรก
+    if (!localStorage.getItem('buddyTutSkipped')) {
+        showBuddyTutorial();
+    }
+
+    // 🌟 ดึงข้อมูลล่าสุดจาก Google Sheets ทุกครั้งที่เปิดหน้าเกม
+    Swal.fire({title: 'กำลังเชื่อมต่อฐานข้อมูลลับ...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+    
+    fetch(GAS_URL) 
+    .then(response => response.json())
+    .then(data => {
+        Swal.close();
+        // ส่งข้อมูลที่ได้ไปแสดงผลบนหน้าจอ
+        renderBuddyState(data.buddyData, data.buddyRevealed, data.members);
+    })
+    .catch(error => {
+        Swal.fire('Error', 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้', 'error');
+        console.error(error);
+    });
+}
+
+// 2. ฟังก์ชันโชว์ Pop-up สอนเล่น (Tutorial)
+window.showBuddyTutorial = function(force = false) {
+    Swal.fire({
+        title: '🕵️ กติกาภารกิจลับ',
+        html: `
+            <div class="text-start small">
+                <p>1. แอดมินจะเป็นคนกดสุ่มจับคู่ในตอนเช้า</p>
+                <p>2. <b>แตะค้างที่การ์ด</b> เพื่อดูว่าคุณต้องไปทำภารกิจกับใคร (ห้ามให้ใครเห็น!)</p>
+                <p>3. เนียนทำภารกิจให้สำเร็จ พร้อม <b>ถ่ายรูป/คลิปหลักฐาน</b> ไว้ในมือถือ</p>
+                <p>4. กดปุ่ม 'ทำสำเร็จแล้ว' ในแอป (เก็บหลักฐานไว้งัดตอนดึก)</p>
+                <p>5. <b>ทายผล</b> ว่าใครจับได้คุณ ส่งได้ครั้งเดียว ล็อกเป้าเลย!</p>
+            </div>
+            ${!force ? '<div class="form-check text-start mt-3"><input class="form-check-input" type="checkbox" id="skipBuddyTut"><label class="form-check-label text-muted small" for="skipBuddyTut">เข้าใจแล้ว ไม่ต้องแสดงอีก</label></div>' : ''}
+        `,
+        icon: 'info',
+        confirmButtonColor: 'var(--color-4)',
+        confirmButtonText: 'รับทราบ!',
+        preConfirm: () => {
+            const skip = document.getElementById('skipBuddyTut');
+            if(skip && skip.checked) localStorage.setItem('buddyTutSkipped', 'true');
+        }
+    });
+}
+
+// 3. ฟังก์ชันควบคุมการเปลี่ยนหน้าจอเกม (3 สถานะ)
+function renderBuddyState(buddyData, isRevealed, membersData) {
+    const myName = localStorage.getItem('tripUserName') || '';
+    
+    // 1. จัดการสิทธิ์แอดมินโซน (แป๊ะ)
+    if (myName === 'แป๊ะ') document.getElementById('buddy-admin-zone').classList.remove('d-none');
+    else document.getElementById('buddy-admin-zone').classList.add('d-none');
+
+    const sectionWaiting = document.getElementById('buddy-waiting');
+    const sectionActive = document.getElementById('buddy-active');
+    const sectionRevealed = document.getElementById('buddy-revealed');
+
+    // ซ่อนทุกสถานะก่อน
+    sectionWaiting.classList.add('d-none');
+    sectionActive.classList.add('d-none');
+    sectionRevealed.classList.add('d-none');
+
+    // 🌟 สถานะ 1: แอดมินยังไม่ได้กดสุ่ม
+    if (!buddyData || buddyData.length === 0) {
+        sectionWaiting.classList.remove('d-none');
+        return;
+    }
+
+    // หาข้อมูลของตัวเองที่ถูกจับคู่
+    const myData = buddyData.find(b => b.player === myName);
+    if(!myData) {
+        sectionWaiting.classList.remove('d-none');
+        sectionWaiting.innerHTML = '<h5 class="text-danger mt-4">คุณไม่ได้อยู่ในรายชื่อผู้เล่นทริปนี้!</h5>';
+        return;
+    }
+
+    // 🌟 สถานะ 2: สุ่มแล้ว กำลังเล่นเกม!
+    if (!isRevealed) {
+        sectionActive.classList.remove('d-none');
+        
+        // หารูปของเป้าหมาย (บัดดี้) จากฐานข้อมูล
+        const targetMember = membersData.find(m => m.name === myData.target);
+        
+        // อัปเดตข้อมูลบนการ์ดความลับ
+        document.getElementById('buddy-target-name').innerText = myData.target;
+        document.getElementById('buddy-mission-text').innerText = myData.mission;
+        document.getElementById('buddy-target-img').src = targetMember ? targetMember.img : 'img/default.png';
+
+        // จัดการปุ่ม "ทำสำเร็จแล้ว"
+        const btnSuccess = document.getElementById('btn-buddy-success');
+        if(myData.isSuccess) {
+            btnSuccess.classList.replace('btn-success', 'btn-secondary');
+            btnSuccess.innerHTML = '<i class="bi bi-check-all"></i> บันทึกแล้ว รองัดหลักฐานตอนดึก!';
+            btnSuccess.disabled = true;
+        } else {
+            btnSuccess.classList.replace('btn-secondary', 'btn-success');
+            btnSuccess.innerHTML = '<i class="bi bi-check-circle"></i> ทำภารกิจสำเร็จแล้ว!';
+            btnSuccess.disabled = false;
+        }
+
+        // จัดการฟอร์มทายผล 
+        const guessForm = document.getElementById('buddy-guess-form');
+        const guessLocked = document.getElementById('buddy-guess-locked');
+        
+        if(myData.guessTarget !== "") { // ถ้าทายไปแล้ว
+            guessForm.classList.add('d-none');
+            guessLocked.classList.remove('d-none');
+        } else { // ถ้ายังไม่ทาย
+            guessForm.classList.remove('d-none');
+            guessLocked.classList.add('d-none');
+            
+            // เติมรายชื่อเพื่อนลงใน Dropdown ให้เลือกทาย
+            const guessWho = document.getElementById('guess-who');
+            guessWho.innerHTML = '<option value="">-- เลือกคนที่น่าสงสัย --</option>';
+            membersData.forEach(m => {
+                if(m.name !== myName && m.isActive) {
+                    guessWho.innerHTML += `<option value="${m.name}">${m.name}</option>`;
+                }
+            });
+        }
+
+        // เปิดระบบ "แตะค้างเพื่อส่อง (Hold to Reveal)"
+        bindHoldToReveal();
+    } 
+    // 🌟 สถานะ 3: แอดมินกดเฉลยวงแตก!
+    else {
+        sectionRevealed.classList.remove('d-none');
+        
+        // หาว่าใครคือคนที่ล่าเรา (ใครมี target เป็นชื่อเรา)
+        const hunter = buddyData.find(b => b.target === myName);
+        
+        if(hunter) {
+            document.getElementById('reveal-hunter-name').innerText = hunter.player;
+            document.getElementById('reveal-hunter-mission').innerText = hunter.mission;
+            
+            const resultIcon = document.getElementById('reveal-result-icon');
+            const resultText = document.getElementById('reveal-result-text');
+            const resultBox = document.getElementById('reveal-guess-result');
+            
+            // ตรวจสอบว่า "สิ่งที่เราทาย" ตรงกับ "คนที่ล่าเรา" ไหม?
+            if(myData.guessTarget === hunter.player) {
+                resultIcon.innerText = '✅';
+                resultText.innerText = 'ทายถูก! เซ้นส์แรงมาก!';
+                resultBox.className = 'p-3 rounded-3 text-white bg-success shadow-sm mt-3';
+            } else {
+                resultIcon.innerText = '❌';
+                resultText.innerText = `ทายผิด! โดน ${hunter.player} หลอกเนียนสนิท!`;
+                resultBox.className = 'p-3 rounded-3 text-white bg-danger shadow-sm mt-3';
+            }
+        }
+    }
+}
+
+// 4. ฟังก์ชันแยกสำหรับทำปุ่มแตะค้าง
+function bindHoldToReveal() {
+    const holdCard = document.getElementById('hold-to-reveal-card');
+    if(!holdCard) return;
+
+    holdCard.oncontextmenu = function(e) { e.preventDefault(); e.stopPropagation(); return false; };
+    const startReveal = (e) => { e.preventDefault(); holdCard.classList.add('is-revealing'); };
+    const stopReveal = (e) => { e.preventDefault(); holdCard.classList.remove('is-revealing'); };
+
+    holdCard.removeEventListener('mousedown', startReveal);
+    holdCard.removeEventListener('mouseup', stopReveal);
+    holdCard.removeEventListener('mouseleave', stopReveal);
+    holdCard.removeEventListener('touchstart', startReveal);
+    holdCard.removeEventListener('touchend', stopReveal);
+
+    holdCard.addEventListener('mousedown', startReveal);
+    holdCard.addEventListener('mouseup', stopReveal);
+    holdCard.addEventListener('mouseleave', stopReveal); 
+    holdCard.addEventListener('touchstart', startReveal, {passive: false});
+    holdCard.addEventListener('touchend', stopReveal);
+}
+
+// -----------------------------------------------------
+// ฟังก์ชันเรียก API (ส่งไปที่ Google Apps Script)
+// -----------------------------------------------------
+
+window.adminShuffleBuddy = function() {
+    Swal.fire({
+        title: 'เริ่มเกมใหม่?', text: 'การกดสุ่มจะล้างข้อมูลเก่าทั้งหมดและจับคู่ใหม่ทันที ยืนยันไหมแอดมินแป๊ะ?',
+        icon: 'warning', showCancelButton: true, confirmButtonText: 'ลุยเลย!'
+    }).then((res) => {
+        if(res.isConfirmed) {
+            Swal.fire({title: 'กำลังสุ่ม...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+            fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'shuffleBuddy' }) })
+            .then(() => { 
+                Swal.fire('สุ่มเสร็จแล้ว!', 'ลูกทัวร์ทุกคนสามารถดูเป้าหมายได้แล้ว', 'success')
+                .then(() => openBuddyGame()); // รีโหลดหน้าจอใหม่
+            });
+        }
+    });
+}
+
+window.adminRevealBuddy = function() {
+    Swal.fire({
+        title: 'เฉลยวงแตก! 🚨', text: 'ถ้ากดยืนยัน หน้าจอของทุกคนจะเปิดเผยผลลัพธ์ทันที!',
+        icon: 'error', showCancelButton: true, confirmButtonText: 'เฉลยเลย!'
+    }).then((res) => {
+        if(res.isConfirmed) {
+            Swal.fire({title: 'กำลังส่งสัญญาณ...', didOpen: () => Swal.showLoading()});
+            fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'revealBuddy' }) })
+            .then(() => { 
+                Swal.fire('เฉลยแล้ว!', 'ดูรีแอคชั่นเพื่อนๆ ได้เลย 555', 'success')
+                .then(() => openBuddyGame()); // รีโหลดหน้าจอใหม่
+            });
+        }
+    });
+}
+
+window.markBuddySuccess = function() {
+    Swal.fire({
+        title: 'สำเร็จแล้วจริงดิ?', text: 'แน่ใจนะว่าทำเนียนๆ และมีหลักฐานถ่ายไว้ในมือถือแล้ว?',
+        icon: 'question', showCancelButton: true, confirmButtonText: 'มีหลักฐานพร้อม!'
+    }).then((res) => {
+        if(res.isConfirmed) {
+            Swal.fire({title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+            const myName = localStorage.getItem('tripUserName');
+            fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'updateBuddySuccess', playerName: myName }) })
+            .then(() => {
+                document.getElementById('btn-buddy-success').classList.replace('btn-success', 'btn-secondary');
+                document.getElementById('btn-buddy-success').innerHTML = '<i class="bi bi-check-all"></i> บันทึกแล้ว รองัดหลักฐานตอนดึก!';
+                document.getElementById('btn-buddy-success').disabled = true;
+                Swal.fire('ยอดเยี่ยม!', 'รอรับแรงกระแทกตอนเฉลยได้เลย', 'success');
+            });
+        }
+    });
+}
+
+window.submitBuddyGuess = function() {
+    const who = document.getElementById('guess-who').value;
+    const what = document.getElementById('guess-what').value;
+    
+    if(!who || !what) { Swal.fire('เดี๋ยวก่อน!', 'กรอกให้ครบทั้งชื่อและภารกิจสิวัยรุ่น', 'warning'); return; }
+
+    Swal.fire({
+        title: 'ล็อกคำตอบนะ?', text: `คุณทายว่า "${who}" มาทำ "${what}" ส่งแล้วแก้ไม่ได้แล้วนะ!`,
+        icon: 'warning', showCancelButton: true, confirmButtonText: 'มั่นใจ! ล็อกเลย'
+    }).then((res) => {
+        if(res.isConfirmed) {
+            Swal.fire({title: 'กำลังล็อกเป้าหมาย...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+            const myName = localStorage.getItem('tripUserName');
+            fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'submitBuddyGuess', playerName: myName, guessTarget: who, guessMission: what }) })
+            .then(() => {
+                document.getElementById('buddy-guess-form').classList.add('d-none');
+                document.getElementById('buddy-guess-locked').classList.remove('d-none');
+                Swal.fire('ล็อกเป้าแล้ว!', 'รอแอดมินเฉลยตอนดึก', 'success');
+            });
+        }
+    });
+}
+
+// ฟังก์ชันล้างกระดานเกมบัดดี้ (กลับไปหน้าจอแม่กุญแจ)
+window.adminResetBuddy = function() {
+    Swal.fire({
+        title: 'ล้างข้อมูลเกม?', 
+        text: 'จะล้างบัดดี้ ภารกิจ และการทายผลทั้งหมด กลับไปสู่สถานะยังไม่เริ่มเกม (เอาไว้เทส)',
+        icon: 'warning', 
+        showCancelButton: true, 
+        confirmButtonText: 'ล้างเลย!'
+    }).then((res) => {
+        if(res.isConfirmed) {
+            Swal.fire({title: 'กำลังล้างข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+            fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'resetBuddyGame' }) })
+            .then(() => { 
+                Swal.fire('รีเซ็ตสำเร็จ!', 'กลับสู่สถานะยังไม่เริ่มเกมแล้ว', 'success')
+                .then(() => openBuddyGame()); // รีโหลดหน้าจอใหม่ให้กลับเป็นรูปแม่กุญแจ
+            });
+        }
+    });
+}

@@ -184,6 +184,18 @@
                             </div>
                         </div>
 
+                        <!-- เกมที่ 6: ภารกิจลับจับบัดดี้ -->
+                        <div class="col-12 mb-3">
+                            <div class="glass-card p-3 text-start d-flex align-items-center shadow-sm border-danger" onclick="openBuddyGame()" style="cursor: pointer; border-left: 5px solid #dc3545;">
+                                <div class="bg-white p-3 rounded-circle me-3 shadow-sm text-dark" style="font-size: 1.5rem;">🕵️</div>
+                                <div>
+                                    <h6 class="fw-bold mb-1 text-danger">ภารกิจลับ (Secret Buddy)</h6>
+                                    <small class="text-muted">ความลับระดับชาติ... ห้ามให้ใครรู้!</small>
+                                </div>
+                                <i class="bi bi-chevron-right ms-auto text-muted"></i>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>
@@ -279,7 +291,7 @@
                 </div>
             </div>
 
-            <!-- หน้าต่างย่อย: เกมวงล้อคู่ -->
+            <!-- เกมที่ 1: เกมวงล้อคู่ -->
             <div id="subpage-roulette" class="page-section d-none bg-light" style="position: absolute; top: 0; left: 0; width: 100%; height: 100vh; z-index: 1050; overflow-y: auto;">
                 
                 <div class="ios-header glass-nav d-flex align-items-center px-3 py-3 sticky-top">
@@ -351,7 +363,7 @@
                 </div>
             </div>
 
-            <!-- หน้าต่างย่อย: เกมเต๋าสั่งลุย -->
+            <!-- เกมที่ 2: เกมเต๋าสั่งลุย -->
             <div id="subpage-dice" class="page-section d-none bg-light" style="position: absolute; top: 0; left: 0; width: 100%; height: 100vh; z-index: 1050; overflow-y: auto;">
                 
                 <div class="ios-header glass-nav d-flex align-items-center px-3 py-3 sticky-top">
@@ -471,6 +483,116 @@
                         <h3 id="kc-title" class="fw-bold text-danger">ชื่อไพ่</h3>
                         <p id="kc-desc" class="mb-0 fs-5">กติกาการกินจะขึ้นตรงนี้</p>
                     </div>
+                </div>
+            </div>
+
+            <!-- เกมที่ 6: เกมภารกิจลับ (Buddy Game) -->
+            <div id="subpage-buddy" class="page-section d-none bg-light" style="position: absolute; top: 0; left: 0; width: 100%; height: 100vh; z-index: 1050; overflow-y: auto;">
+                
+                <div class="ios-header glass-nav d-flex align-items-center px-3 py-3 sticky-top">
+                    <button class="btn btn-link text-decoration-none text-dark p-0 fw-bold" onclick="closeMiniGame()">
+                        <i class="bi bi-chevron-left"></i> กลับ
+                    </button>
+                    <h5 class="mx-auto mb-0 fw-bold">ภารกิจลับ 🤫</h5>
+                    <button class="btn btn-link text-dark p-0 fs-5" onclick="showBuddyTutorial(true)">
+                        <i class="bi bi-info-circle"></i>
+                    </button>
+                </div>
+
+                <div class="container pb-5 mt-4 text-center">
+                    
+                    <!-- โซนของแอดมิน (แสดงเฉพาะ แป๊ะ) -->
+                    <div id="buddy-admin-zone" class="glass-card p-3 mb-4 d-none border-danger" style="border: 2px dashed;">
+                        <h6 class="fw-bold text-danger mb-3"><i class="bi bi-shield-lock"></i> แอดมินโซน (แป๊ะ)</h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button class="btn btn-warning flex-fill fw-bold" onclick="adminShuffleBuddy()">
+                                <i class="bi bi-dice-5"></i> สุ่มจับคู่
+                            </button>
+                            <button class="btn btn-danger flex-fill fw-bold" onclick="adminRevealBuddy()">
+                                <i class="bi bi-megaphone"></i> เฉลยวงแตก !
+                            </button>
+                            <button class="btn btn-outline-secondary w-100 fw-bold mt-2" onclick="adminResetBuddy()">
+                                <i class="bi bi-arrow-counterclockwise"></i> ล้างข้อมูลเกม (สำหรับเทส)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- สถานะ 1: ยังไม่เริ่มเกม -->
+                    <div id="buddy-waiting" class="glass-card p-5 mb-4">
+                        <h1 class="display-1 opacity-25 mb-3">🔒</h1>
+                        <h5 class="fw-bold text-muted">แอดมินยังไม่ได้กดสุ่มจับคู่</h5>
+                        <p class="small text-muted mb-0">รอแป๊ะส่งสัญญาณเริ่มเกมนะจ๊ะ</p>
+                    </div>
+
+                    <!-- สถานะ 2: กำลังเล่นเกม (ส่อง & ทายผล) -->
+                    <div id="buddy-active" class="d-none">
+                        <!-- การ์ดแตะค้างเพื่อดู -->
+                        <p class="text-muted small mb-2"><i class="bi bi-hand-index-thumb"></i> แตะค้างไว้ที่กล่องเพื่อดูความลับ (อย่าให้ใครเห็น!)</p>
+                        <div id="hold-to-reveal-card" class="hold-to-reveal-container glass-card mb-4 mx-auto" style="max-width: 320px; height: 350px;">
+                            <!-- ปกปิดทับไว้ -->
+                            <div class="reveal-cover d-flex flex-column align-items-center justify-content-center text-white rounded-3 h-100 w-100" style="background: linear-gradient(135deg, #ff416c, #ff4b2b);">
+                                <h1 class="display-1 mb-3">🤫</h1>
+                                <h4 class="fw-bold">ความลับระดับชาติ</h4>
+                                <p class="small opacity-75">แตะค้างไว้เพื่อส่องดู</p>
+                            </div>
+                            
+                            <!-- เนื้อหาความลับ (ซ่อนอยู่ข้างใต้) -->
+                            <div class="reveal-content d-flex flex-column align-items-center justify-content-center h-100 w-100 p-3 d-none bg-white rounded-3">
+                                <h6 class="text-danger fw-bold mb-3">เป้าหมายของคุณคือ</h6>
+                                <img id="buddy-target-img" src="" alt="Target" class="rounded-circle mb-2 shadow-sm" style="width: 100px; height: 100px; object-fit: cover; border: 3px solid var(--color-4);">
+                                <h3 id="buddy-target-name" class="fw-bold mb-3 text-dark">ชื่อเป้าหมาย</h3>
+                                <div class="bg-light p-3 rounded-3 w-100">
+                                    <small class="text-muted fw-bold d-block mb-1">ภารกิจ:</small>
+                                    <h6 id="buddy-mission-text" class="mb-0 fw-bold text-primary">ทำอะไรสักอย่าง...</h6>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ปุ่มกดสำเร็จ -->
+                        <button id="btn-buddy-success" class="btn btn-success rounded-pill fw-bold px-4 py-3 shadow-sm mb-4" onclick="markBuddySuccess()">
+                            <i class="bi bi-check-circle"></i> ทำภารกิจสำเร็จแล้ว!
+                        </button>
+
+                        <hr class="my-4 opacity-25">
+
+                        <!-- ฟอร์มทายผล -->
+                        <h6 class="fw-bold mb-3"><i class="bi bi-search"></i> ทายผล (ล็อกคำตอบส่งได้ครั้งเดียว)</h6>
+                        <div id="buddy-guess-form" class="glass-card p-3 text-start mx-auto" style="max-width: 320px;">
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">1. คิดว่าใครจับได้คุณ?</label>
+                                <select id="guess-who" class="form-select bg-white bg-opacity-75"></select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">2. มันมาทำอะไรกับคุณ?</label>
+                                <input type="text" id="guess-what" class="form-control bg-white bg-opacity-75" placeholder="เช่น หลอกให้ถ่ายรูปคู่...">
+                            </div>
+                            <button id="btn-submit-guess" class="btn btn-dark w-100 rounded-pill fw-bold" onclick="submitBuddyGuess()">ส่งคำตอบ (แก้ไม่ได้แล้วนะ!)</button>
+                        </div>
+                        <div id="buddy-guess-locked" class="glass-card p-3 bg-secondary text-white d-none mx-auto" style="max-width: 320px;">
+                            <i class="bi bi-lock-fill fs-3 d-block mb-2"></i>
+                            <h6 class="fw-bold">ล็อกคำตอบแล้ว!</h6>
+                            <p class="small mb-0 opacity-75">รอแอดมินกดเฉลย...</p>
+                        </div>
+                    </div>
+
+                    <!-- สถานะ 3: เฉลยผล (Reveal Phase) -->
+                    <div id="buddy-revealed" class="d-none">
+                        <div class="glass-card p-4 mb-4 border-primary" style="border: 2px solid;">
+                            <h2 class="fw-bold text-primary mb-3">🚨 เฉลยวงแตก!</h2>
+                            <p class="mb-2">คนที่จับได้คุณคือ: <br><strong class="fs-4 text-danger" id="reveal-hunter-name">...</strong></p>
+                            <p class="mb-3">ภารกิจของมันคือ: <br><strong class="text-dark" id="reveal-hunter-mission">...</strong></p>
+                            
+                            <hr>
+                            
+                            <h5 class="fw-bold mt-3 mb-2">ผลการทายของคุณ</h5>
+                            <div id="reveal-guess-result" class="p-3 rounded-3 text-white">
+                                <!-- จะเปลี่ยนสีเขียว(ถูก)/แดง(ผิด) ด้วย JS -->
+                                <h3 id="reveal-result-icon" class="mb-0">✅</h3>
+                                <h6 id="reveal-result-text" class="fw-bold mt-2 mb-0">ทายถูก! เก่งมาก!</h6>
+                            </div>
+                        </div>
+                    </div>
+                    
                 </div>
             </div>
 
