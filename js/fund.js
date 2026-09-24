@@ -145,7 +145,7 @@ function renderFundData() {
 
     // --- 3. จัดการสิทธิ์แอดมิน ---
     const adminControls = document.getElementById('admin-controls');
-    if (userName === 'มายด์') {
+    if (userName === 'แป๊ะ') {
         adminControls.classList.remove('d-none');
     } else {
         adminControls.classList.add('d-none');
@@ -197,7 +197,7 @@ function renderFundData() {
 // --- ฟังก์ชันแอดมิน ---
 window.notifyPayment = function() {
     Swal.fire({ title: 'แจ้งโอนเงิน', input: 'file', confirmButtonColor: '#DC9B9B', confirmButtonText: 'ส่งสลิป' })
-    .then((res) => { if (res.isConfirmed && res.value) Swal.fire('ส่งสำเร็จ!', 'แจ้งมายด์แล้ว', 'success'); });
+    .then((res) => { if (res.isConfirmed && res.value) Swal.fire('ส่งสำเร็จ!', 'แจ้งแป๊ะแล้ว', 'success'); });
 }
 
 window.adminManageExpenses = function() {

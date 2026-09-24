@@ -79,7 +79,7 @@ window.openTripDetails = function(tripId) {
 
     const resetZone = document.getElementById('admin-reset-zone');
     if(resetZone) {
-        if(userName === 'มายด์') resetZone.classList.remove('d-none');
+        if(userName === 'แป๊ะ') resetZone.classList.remove('d-none');
         else resetZone.classList.add('d-none');
     }
 

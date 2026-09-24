@@ -29,7 +29,7 @@ const tripsData = [
                 id: "teamKKC",
                 name: "ทีมขอนแก่น 🦖",
                 theme: "pink", // ใช้สีชมพูตุ่น
-                members: ["มายด์", "ซีแพค", "ป๊อปอาย", "ไทเกอร์", "ลีโอ", "หญิง", "ทราย", "พายุ"],
+                members: ["แป๊ะ", "ซีแพค", "ป๊อปอาย", "ไทเกอร์", "ลีโอ", "หญิง", "ทราย", "พายุ"],
                 gmapLink: "https://maps.app.goo.gl/GPD8kcRoCKNAAWD16?g_st=ic",
                 path: [
                     { id: 1, name: "รับทรายที่บ้าน + ซื้อเบียร์ร้านพายุ", type: "start", durationMinutes: 0, lat: 16.056453374435712, lng:  102.72641009074128, gmapLink: "https://maps.app.goo.gl/Y3JJLqtDVHX1Df9GA" },
