@@ -194,10 +194,117 @@ function renderFundData() {
     });
 }
 
-// --- ฟังก์ชันแอดมิน ---
+// ================= ระบบแจ้งโอนเงิน (แนบสลิป) =================
 window.notifyPayment = function() {
-    Swal.fire({ title: 'แจ้งโอนเงิน', input: 'file', confirmButtonColor: '#DC9B9B', confirmButtonText: 'ส่งสลิป' })
-    .then((res) => { if (res.isConfirmed && res.value) Swal.fire('ส่งสำเร็จ!', 'แจ้งแป๊ะแล้ว', 'success'); });
+    // 1. สร้างตัวเลือกไฟล์ (Input Type File) แบบซ่อนไว้ เพื่อเรียกใช้งานเมื่อกดปุ่ม
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*'; // รับเฉพาะไฟล์รูปภาพ
+    
+    // 2. เมื่อเพื่อนเลือกรูปเสร็จ จะทำงานตรงนี้
+    fileInput.onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        // เช็คขนาดไฟล์ (ป้องกันไฟล์ใหญ่เกิน 5MB แล้วแอปค้าง)
+        if (file.size > 5 * 1024 * 1024) {
+            Swal.fire('ไฟล์ใหญ่เกินไป!', 'ขอรูปสลิปขนาดไม่เกิน 5MB นะวัยรุ่น', 'error');
+            return;
+        }
+
+        // 3. แปลงไฟล์รูปเป็น Base64 (ข้อความ) เพื่อส่งผ่านอินเทอร์เน็ต
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const base64String = event.target.result;
+            
+            // 4. เด้ง Pop-up โชว์รูปพรีวิว และให้กรอกจำนวนเงิน
+            Swal.fire({
+                title: 'ยืนยันการแจ้งโอน',
+                html: `
+                    <p class="text-muted small mb-2">เช็คความถูกต้องของสลิปก่อนส่งนะจ๊ะ</p>
+                    <img src="${base64String}" class="img-fluid rounded-3 shadow-sm mb-3 border" style="max-height: 250px; object-fit: contain;">
+                    
+                    <div class="form-group text-start px-2 mb-3">
+                        <label class="fw-bold mb-1"><i class="bi bi-cash-coin text-success"></i> ยอดเงินที่โอน (บาท):</label>
+                        <input type="number" id="slip-amount" class="form-control form-control-lg text-center fw-bold text-danger" placeholder="เช่น 500" style="font-size: 1.5rem;">
+                    </div>
+                    
+                    <div class="form-group text-start px-2">
+                        <label class="fw-bold mb-1 small text-muted"><i class="bi bi-chat-text"></i> หมายเหตุ (จ่ายให้ใครบ้าง):</label>
+                        <input type="text" id="slip-note" class="form-control" placeholder="เช่น ของซีแพคและแป๊ะ">
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonColor: 'var(--color-4)',
+                confirmButtonText: '🚀 ยืนยันการส่งสลิป',
+                cancelButtonText: 'ยกเลิก',
+                preConfirm: () => {
+                    const amount = document.getElementById('slip-amount').value;
+                    const note = document.getElementById('slip-note').value; // 🌟 แก้จุดที่ 1: เพิ่มบรรทัดดึงค่า note
+                    
+                    if (!amount || amount <= 0) {
+                        Swal.showValidationMessage('อย่าลืมใส่ยอดเงินให้ถูกต้องด้วยจ้า!');
+                        return false;
+                    }
+                    return { amount: amount, note: note, base64: base64String, fileName: file.name, mimeType: file.type };
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // 5. ถ้ากดยืนยัน ให้เรียกฟังก์ชันส่งไฟล์ไปที่เซิร์ฟเวอร์
+                    uploadSlipToServer(result.value);
+                }
+            });
+        };
+        // สั่งให้อ่านไฟล์
+        reader.readAsDataURL(file);
+    };
+    
+    // จำลองการคลิกเพื่อเปิดหน้าต่างเลือกไฟล์ในมือถือ
+    fileInput.click();
+};
+
+// ฟังก์ชันส่งข้อมูลไปยัง Google Apps Script
+function uploadSlipToServer(data) {
+    Swal.fire({
+        title: 'กำลังส่งสลิปให้แอดมินแป๊ะ...',
+        html: 'รอแป๊บนึงนะวัยรุ่น 💸',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+    });
+
+    const myName = localStorage.getItem('tripUserName') || 'ไม่ระบุชื่อ';
+    
+    const payload = {
+        action: 'uploadSlip',
+        playerName: myName,
+        amount: data.amount,
+        note: data.note || '-',
+        base64: data.base64,
+        fileName: data.fileName,
+        mimeType: data.mimeType
+    };
+
+    // 🌟 แก้จุดที่ 2: เปลี่ยนจาก GAS_URL เป็น API_URL ให้ตรงกับที่ประกาศไว้ด้านบน
+    fetch(API_URL, { 
+        method: 'POST',
+        body: JSON.stringify(payload)
+    })
+    .then(response => response.json())
+    .then(res => {
+        if (res.status === 'success') {
+            Swal.fire({
+                icon: 'success',
+                title: 'ส่งสลิปเรียบร้อย!',
+                text: 'เงินเข้าระบบแล้ว รอแอดมินแป๊ะตรวจสอบอีกทีนะจ๊ะ'
+            });
+        } else {
+            Swal.fire('Error', res.message || 'เกิดข้อผิดพลาดในการส่ง', 'error');
+        }
+    })
+    .catch(err => {
+        Swal.fire('Error', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้', 'error');
+        console.error(err);
+    });
 }
 
 window.adminManageExpenses = function() {
