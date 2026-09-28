@@ -147,7 +147,7 @@ function renderFundData() {
         if (remain < 0) {
             document.getElementById('fund-personal-remain').textContent = `ได้คืน ฿${Math.abs(remain).toLocaleString()}`;
         } else {
-            document.getElementById('fund-personal-remain').textContent = `฿${remain > 0 ? remain.toLocaleString() : '0 (ครบแล้ว!)'}`;
+            document.getElementById('fund-personal-remain').textContent = `฿${remain > 0 ? remain.toLocaleString() : '0 (ครบแล้ว)'}`;
         }
         document.getElementById('fund-personal-progress').style.width = `${progress}%`;
     }
@@ -170,6 +170,13 @@ function renderFundData() {
         let colorClass = "text-dark";
         let amountText = `฿${exp.owedAmount.toLocaleString()}`;
 
+        // คำนวณหาจำนวนคนที่หารบิลนี้จริงๆ (เพื่อเอามาโชว์ตัวเลข)
+        const currentExpObj = expensesData.find(e => e.id == exp.billId);
+        let payingCount = 0;
+        if (currentExpObj) {
+            payingCount = membersData.filter(m => m.isActive && !currentExpObj.excluded.includes(m.name)).length;
+        }
+
         if (exp.isExcluded) {
             statusText = `<span class="badge bg-light text-secondary rounded-pill">ไม่ได้หาร</span>`;
             colorClass = "text-muted";
@@ -177,7 +184,11 @@ function renderFundData() {
         } else if (exp.paidAmount >= exp.owedAmount) {
             statusText = `<span class="badge bg-success-subtle text-success rounded-pill">จ่ายแล้ว</span>`;
         } else {
-            statusText = `<span class="badge bg-warning-subtle text-warning-emphasis rounded-pill">ค้าง ฿${(exp.owedAmount - exp.paidAmount).toLocaleString()}</span>`;
+            // 🌟 เงื่อนไขใหม่: ถ้ายังจ่ายไม่ครบ ให้แสดงจำนวนคนหาร + ยอดที่ค้างอยู่
+            let remainForThisBill = exp.owedAmount - exp.paidAmount;
+            statusText = `
+                <span class="badge bg-secondary-subtle text-secondary rounded-pill">หาร ${payingCount} คน</span>
+            `;
         }
 
         expenseList.innerHTML += `
@@ -220,14 +231,14 @@ function renderFundData() {
         let opacity = "1";
 
         if (!member.isActive) {
-            statusBadge = `<span class="badge bg-secondary rounded-pill">ยกเลิกทริป</span>`;
+            statusBadge = `<span class="badge bg-secondary-subtle text-secondary rounded-pill">ยกเลิกทริป</span>`;
             opacity = "0.5";
         } else if (memRemain < 0) {
-            statusBadge = `<span class="badge bg-info text-dark rounded-pill">จ่ายเกิน (ทอน ฿${Math.abs(memRemain)})</span>`;
+            statusBadge = `<span class="badge bg-info-subtle text-info rounded-pill">จ่ายเกิน (ทอน ฿${Math.abs(memRemain)})</span>`;
         } else if (memRemain === 0 && memFin.totalOwed > 0) {
-            statusBadge = `<span class="badge bg-success rounded-pill">ครบแล้ว ✅</span>`;
+            statusBadge = `<span class="badge bg-success-subtle text-success rounded-pill">ครบแล้ว</span>`;
         } else {
-            statusBadge = `<span class="badge bg-warning text-dark bg-opacity-50 rounded-pill">ค้าง ฿${memRemain.toLocaleString()}</span>`;
+            statusBadge = `<span class="badge bg-warning-subtle text-warning-emphasis rounded-pill">ค้าง ฿${memRemain.toLocaleString()}</span>`;
         }
 
         const item = document.createElement('div');
