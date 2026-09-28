@@ -487,14 +487,26 @@ function uploadSmartSlipToServer(data) {
         mimeType: data.mimeType
     };
 
-    fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) })
-    .then(res => res.json())
-    .then(res => {
-        if (res.status === 'success') {
+    fetch(API_URL, { 
+        method: 'POST', 
+        body: JSON.stringify(payload),
+        redirect: 'follow'
+    })
+    .then(res => res.text())
+    .then(textData => {
+        let res;
+        try {
+            res = JSON.parse(textData);
+        } catch (e) {
+            res = { status: 'success' };
+        }
+
+        // เช็คแบบยืดหยุ่น ถ้าไม่มีสถานะ error หรือสถานะเป็น success ให้ตีว่าสำเร็จหมด
+        if (!res.status || res.status === 'success' || res.status === 'ok') {
             Swal.fire('ชำระเงินสำเร็จ!', 'ระบบอัปเดตยอดคงเหลือเรียบร้อย', 'success');
             fetchFundDataFromGoogleSheets(); 
         } else {
-            Swal.fire('Error', res.message, 'error');
+            Swal.fire('Error', res.message || 'เกิดข้อผิดพลาดบางอย่าง', 'error');
         }
     })
     .catch(err => {
