@@ -168,8 +168,10 @@ function stopRotateWheels() {
         backdrop: `rgba(0,0,0,0.6)`
     });
     
-    btnSpinDouble.disabled = false;
-    btnSpinDouble.innerHTML = "หมุนอีกรอบ!";
+    if (btnSpinDouble) {
+        btnSpinDouble.disabled = false;
+        btnSpinDouble.innerHTML = "หมุนอีกรอบ!";
+    }
 }
 
 // ฟังก์ชันคำนวณความหน่วง (Ease Out)
@@ -179,7 +181,6 @@ function easeOut(t, b, c, d) {
     return b+c*(tc + -3*ts + 3*t);
 }
 
-// กดปุ่มหมุน
 if (btnSpinDouble) {
     btnSpinDouble.addEventListener("click", () => {
         if(options1.length < 2 || options2.length < 2) {
@@ -195,10 +196,35 @@ if (btnSpinDouble) {
         spinTimeTotal = Math.random() * 3000 + 6000;
         rotateWheels();
     });
+}
 
+// 🌟 ปุ่มบันทึกอัปเดตข้อมูลวงล้อลง Google Sheets
+if (btnUpdateDouble) {
     btnUpdateDouble.addEventListener("click", () => {
-        initDoubleRoulette();
-        Swal.fire({ icon: 'success', title: 'อัปเดตข้อมูลแล้ว', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
+        Swal.fire({ title: 'กำลังบันทึกข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        
+        const payload = {
+            action: 'updateGameSettings',
+            settings: {
+                Roulette_Names: optInput1.value,
+                Roulette_Penalties: optInput2.value
+            }
+        };
+        
+        fetch(GAME_API_URL, { method: 'POST', body: JSON.stringify(payload), redirect: 'follow' })
+        .then(r => r.json())
+        .then(() => {
+            initDoubleRoulette(); // รีเฟรชวงล้อบนหน้าจอตัวเอง
+            
+            // เรียก Super Engine เพื่อดึงข้อมูลอัปเดตให้ทุกหน้าเว็บ
+            if(typeof syncAppData === 'function') syncAppData(false);
+            
+            Swal.fire({ icon: 'success', title: 'เซฟลงฐานข้อมูลแล้ว!', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
+        })
+        .catch(err => {
+            Swal.fire('Error', 'บันทึกไม่สำเร็จ ลองใหม่อีกที', 'error');
+            console.error(err);
+        });
     });
 }
 
@@ -210,7 +236,7 @@ const diceDisplay = document.getElementById('dice-display');
 if (btnRollDice) {
     btnRollDice.addEventListener('click', () => {
         btnRollDice.disabled = true;
-        btnRollDice.innerHTML = "กำลังทอย... 🎲";
+        btnRollDice.innerHTML = "🎲";
         
         // ใส่คลาสแอนิเมชันให้ลูกเต๋าหมุน
         diceDisplay.classList.add('rolling');
@@ -250,6 +276,38 @@ if (btnRollDice) {
                 }, 400);
             }
         }, 100); 
+    });
+}
+
+// 🌟 ปุ่มบันทึกกติกาเต๋าลง Google Sheets
+const btnUpdateDice = document.getElementById('btn-update-dice');
+if (btnUpdateDice) {
+    btnUpdateDice.addEventListener("click", () => {
+        Swal.fire({ title: 'กำลังบันทึกกติกาเต๋า...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        
+        let diceSettings = {};
+        for (let i = 1; i <= 6; i++) {
+            let val = document.querySelector(`.dice-rule[data-dice="${i}"]`).value;
+            diceSettings[`Dice_${i}`] = val;
+        }
+        
+        const payload = {
+            action: 'updateGameSettings',
+            settings: diceSettings
+        };
+        
+        fetch(GAME_API_URL, { method: 'POST', body: JSON.stringify(payload), redirect: 'follow' })
+        .then(r => r.json())
+        .then(() => {
+            // เรียก Super Engine เพื่ออัปเดตข้อมูลให้ทุกคน
+            if(typeof syncAppData === 'function') syncAppData(false);
+            
+            Swal.fire({ icon: 'success', title: 'อัปเดตกติกาเต๋าแล้ว!', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
+        })
+        .catch(err => {
+            Swal.fire('Error', 'บันทึกไม่สำเร็จ', 'error');
+            console.error(err);
+        });
     });
 }
 
@@ -753,50 +811,3 @@ window.adminResetBuddy = function() {
         }
     });
 }
-
-// =========================================================
-// 🌐 ระบบโหลดข้อมูลแบบสายฟ้าแลบ (Background Pre-fetch)
-// =========================================================
-
-// ฟังก์ชันโหลดข้อมูลเกมเงียบๆ (ไม่ให้มี Pop-up โหลดมากวนใจ)
-async function loadGameData() {
-    try {
-        const res = await fetch(API_URL, { redirect: 'follow' });
-        const data = await res.json();
-        
-        let settings = data.gameSettings || {};
-        // รองรับทั้ง M ใหญ่ และ m เล็ก (เผื่อไว้)
-        let members = data.members || data.Members || []; 
-        
-        // --- อัปเดตวงล้อ ---
-        if(optInput1 && optInput2) {
-            if (settings.Roulette_Names) {
-                optInput1.value = settings.Roulette_Names;
-            } else {
-                let activeNames = members.filter(m => m.isActive).map(m => m.name);
-                if(activeNames.length > 0) optInput1.value = activeNames.join('\n');
-            }
-            
-            if (settings.Roulette_Penalties) {
-                optInput2.value = settings.Roulette_Penalties;
-            }
-            initDoubleRoulette(); // วาดวงล้อรอไว้เลย
-        }
-
-        // --- อัปเดตเต๋า ---
-        for (let i = 1; i <= 6; i++) {
-            let diceInput = document.querySelector(`.dice-rule[data-dice="${i}"]`);
-            if (diceInput && settings[`Dice_${i}`]) {
-                diceInput.value = settings[`Dice_${i}`];
-            }
-        }
-        
-        console.log("✅ โหลดกติกาเกมล่วงหน้าเสร็จสิ้น พร้อมเล่น!");
-    } catch (e) {
-        console.error("ดึงข้อมูลเกมไม่สำเร็จ", e);
-    }
-}
-
-setTimeout(() => {
-    loadGameData();
-}, 500); // หน่วงเวลา 0.5 วิ ค่อยโหลด เพื่อไม่ให้แย่งเน็ตตอนเปิดเว็บตอนแรก

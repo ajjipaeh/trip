@@ -15,33 +15,62 @@ let transactionsData = [];
 const API_URL = "https://script.google.com/macros/s/AKfycbw3Ad2IF2oUhRXNA6kQj2iVjnORbslQ3N2PcMWMBH6-GpC4b-ZsAdBSv43pzSd9MIGtow/exec";
 
 // =========================================================
-// 🔄 ระบบดึงข้อมูลและจัดการหน้าจอ (Fetch & Navigation)
+// 🚀 THE SUPER ENGINE: ระบบซิงค์ข้อมูลรอบเดียวใช้ได้ทั้งเว็บ
 // =========================================================
-async function fetchFundDataFromGoogleSheets() {
+window.syncAppData = async function(showLoading = false) {
+    if(showLoading) {
+        Swal.fire({ title: 'กำลังอัปเดตข้อมูลล่าสุด...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    }
+    
     try {
-        const response = await fetch(API_URL, { redirect: 'follow' }); // แก้ปัญหา CORS
+        const response = await fetch(API_URL, { redirect: 'follow' });
         const data = await response.json();
         
+        // --- 1. อัปเดตข้อมูลฝั่งบัญชีกองกลาง ---
         membersData = data.members || [];
-        expensesData = data.expenses || []; 
+        expensesData = data.expenses || [];
         transactionsData = data.transactions || [];
         
         fundMetaData.lastUpdated = new Date().toLocaleDateString('th-TH', { 
             year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
         });
         
-        if (!document.getElementById('page-fund').classList.contains('d-none')) {
-            renderFundData();
+        if (typeof renderFundData === 'function') renderFundData(); // สั่งวาดบัญชีรอไว้เลย
+
+        // --- 2. อัปเดตข้อมูลฝั่งมินิเกม ---
+        let settings = data.gameSettings || {};
+        
+        const optInput1 = document.getElementById("roulette-opt-1");
+        const optInput2 = document.getElementById("roulette-opt-2");
+        if(optInput1 && optInput2) {
+            if (settings.Roulette_Names) {
+                optInput1.value = settings.Roulette_Names;
+            } else {
+                let activeNames = membersData.filter(m => m.isActive).map(m => m.name);
+                if(activeNames.length > 0) optInput1.value = activeNames.join('\n');
+            }
+            if (settings.Roulette_Penalties) optInput2.value = settings.Roulette_Penalties;
+            if (typeof initDoubleRoulette === 'function') initDoubleRoulette(); // สั่งวาดวงล้อรอไว้เลย
         }
+
+        for (let i = 1; i <= 6; i++) {
+            let diceInput = document.querySelector(`.dice-rule[data-dice="${i}"]`);
+            if (diceInput && settings[`Dice_${i}`]) {
+                diceInput.value = settings[`Dice_${i}`];
+            }
+        }
+
+        if(showLoading) Swal.close();
+        console.log("⚡ ซิงค์ข้อมูล Global Cache สำเร็จ! เว็บลื่นปรื้ดแล้ว");
     } catch (error) {
-        console.error("เกิดข้อผิดพลาดในการดึงข้อมูลชีท:", error);
-        Swal.fire('แจ้งเตือน', 'ไม่สามารถเชื่อมต่อฐานข้อมูลกองกลางได้', 'error');
+        console.error("เกิดข้อผิดพลาดในการดึงข้อมูล:", error);
+        if(showLoading) Swal.fire('แจ้งเตือน', 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้', 'error');
     }
 }
 
 window.openFundPage = function() {
     document.getElementById('page-fund').classList.remove('d-none');
-    fetchFundDataFromGoogleSheets();
+    renderFundData(); // วาดหน้าจอทันที ไม่ต้องรอโหลด!
 }
 
 window.closeFundPage = function() {
@@ -170,13 +199,13 @@ function renderFundData() {
     // --- 2. วาดบิลรายละเอียด Breakdown (แยกกองกลาง กับ จัดกลุ่มรถ) ---
     const expenseListMain = document.getElementById('fund-expense-list-main');
     const expenseListTravel = document.getElementById('fund-expense-list-travel');
-    expenseListMain.innerHTML = '';
-    expenseListTravel.innerHTML = '';
     
     // ยอดรวมทั้งทริป (Total Trip Burn)
     let grandTotalBurn = 0;
 
-    // 2.1 วาดบิลกองกลางหลัก
+    // 🌟 2.1 วาดบิลกองกลางหลัก (ใช้ DOM Batching)
+    let htmlMain = ""; 
+    
     myFin.breakdown.filter(exp => !exp.isTravel).forEach(exp => {
         grandTotalBurn += exp.totalAmount; // บวกเข้ายอดใช้จ่ายรวม
         
@@ -195,7 +224,7 @@ function renderFundData() {
             statusText = `<span class="badge bg-secondary-subtle text-secondary rounded-pill">หาร ${payingCount} คน</span>`;
         }
 
-        expenseListMain.innerHTML += `
+        htmlMain += `
             <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
                 <div class="d-flex align-items-center gap-2 ${colorClass}">
                     <i class="bi ${exp.icon} fs-5 text-muted"></i>
@@ -208,18 +237,20 @@ function renderFundData() {
             </div>
         `;
     });
+    // 🌟 นำก้อน HTML หลักไปใส่หน้าจอทีเดียว
+    expenseListMain.innerHTML = htmlMain;
 
-    // 2.2 วาดบิลค่าเดินทาง (แยกกลุ่มรถ)
-    let cars = expensesData.filter(e => e.icon === 'bi-car-front-fill');
-    
-    if (cars.length === 0) {
-        expenseListTravel.innerHTML = '<div class="text-center text-muted small py-2">คุณยังไม่มีกลุ่มรถ หรือบิลค่าเดินทาง</div>';
+    // 🌟 2.2 วาดบิลค่าเดินทาง (แยกกลุ่มรถ) โชว์เฉพาะรถตัวเอง! (ใช้ DOM Batching)
+    let allCars = expensesData.filter(e => e.icon === 'bi-car-front-fill');
+    let myCars = allCars.filter(car => !car.excluded.includes(userName));
+    let myTravelTotal = 0; 
+    let htmlTravel = ""; 
+
+    if (myCars.length === 0) {
+        expenseListTravel.innerHTML = '<div class="text-center text-muted small py-3">คุณยังไม่มีกลุ่มรถ หรือบิลค่าเดินทาง 🚗</div>';
     } else {
-        cars.forEach(car => {
-            // หารายชื่อคนในรถ
+        myCars.forEach(car => {
             let peopleInCarCount = membersData.filter(m => m.isActive && !car.excluded.includes(m.name)).length;
-            
-            // หาบิลที่อยู่ในรถคันนี้ (เช็คจาก Tag [🚗 ชื่อรถ] ที่เราแอบใส่ไว้ตอนเซฟ)
             let carExpenses = expensesData.filter(e => e.icon !== 'bi-car-front-fill' && e.name.startsWith(`[${car.name}]`));
             
             let carTotal = 0;
@@ -227,9 +258,6 @@ function renderFundData() {
             
             carExpenses.forEach(ce => {
                 carTotal += ce.totalAmount;
-                grandTotalBurn += ce.totalAmount; // บวกเข้ายอดใช้จ่ายรวม
-                
-                // สกัดชื่อบิลกับคนจ่ายออกมา (แยกด้วยเครื่องหมาย |)
                 let cleanName = ce.name.replace(`[${car.name}] `, '').split(' | ');
                 let itemName = cleanName[0];
                 let payerName = cleanName[1] ? cleanName[1] : '';
@@ -246,11 +274,10 @@ function renderFundData() {
             });
             
             let perPerson = peopleInCarCount > 0 ? Math.ceil(carTotal / peopleInCarCount) : 0;
-            let amIInThisCar = !car.excluded.includes(userName);
-            let borderHighlight = amIInThisCar ? 'border-primary border-4 shadow-sm' : 'border-light opacity-75';
+            myTravelTotal += perPerson;
 
-            expenseListTravel.innerHTML += `
-                <div class="glass-card mb-3 p-3 border-start ${borderHighlight}" style="background-color: #f8f9fa;">
+            htmlTravel += `
+                <div class="glass-card mb-3 p-3 border-start border-primary border-4 shadow-sm" style="background-color: #f8f9fa;">
                     <h6 class="fw-bold text-primary mb-1">${car.name} <span class="badge bg-light text-dark border">ลูกเรือ ${peopleInCarCount} คน</span></h6>
                     ${expenseItemsHTML || '<div class="small text-muted mt-2">ยังไม่มีค่าใช้จ่าย</div>'}
                     
@@ -262,25 +289,22 @@ function renderFundData() {
                 </div>
             `;
         });
+        // 🌟 นำก้อน HTML รถไปใส่หน้าจอทีเดียว
+        expenseListTravel.innerHTML = htmlTravel;
     }
 
-    // อัปเดตยอดรวมทั้งหมด
-    document.getElementById('fund-total-owed-display').textContent = myFin.totalOwed.toLocaleString(); // หนี้กองกลางของคุณ
-    
-    // 🌟 โชว์สถิติ "ทริปนี้ละลายทรัพย์ไปแล้วรวม..." (เพิ่ม element นี้ต่อท้ายใน HTML หรือโชว์แบบนี้ไปเลย)
-    if(document.getElementById('fund-grand-total')) {
-        document.getElementById('fund-grand-total').textContent = grandTotalBurn.toLocaleString();
-    }
-
+    // อัปเดตยอดรวมทั้งหมด (หนี้กองกลางหลัก + หนี้ค่าเดินทางเฉพาะส่วนของเรา)
+    let overallTotal = myFin.totalOwed + myTravelTotal;
+    document.getElementById('fund-total-owed-display').textContent = overallTotal.toLocaleString();
     
     // --- 3. จัดการสิทธิ์แอดมิน ---
     const adminControls = document.getElementById('admin-controls');
     if (userName === 'แป๊ะ') adminControls.classList.remove('d-none');
     else adminControls.classList.add('d-none');
 
-    // --- 4. แสดงสถานะเพื่อนๆ ทุกคนในทริป ---
+    // 🌟 --- 4. แสดงสถานะเพื่อนๆ ทุกคนในทริป (ใช้ DOM Batching) ---
     const listContainer = document.getElementById('fund-members-list');
-    listContainer.innerHTML = '';
+    let htmlMembers = "";
 
     membersData.forEach(member => {
         let memFin = getUserFinancials(member.name);
@@ -300,25 +324,27 @@ function renderFundData() {
             statusBadge = `<span class="badge bg-warning-subtle text-warning-emphasis rounded-pill">ค้าง ฿${memRemain.toLocaleString()}</span>`;
         }
 
-        const item = document.createElement('div');
-        item.className = 'glass-card p-3 d-flex justify-content-between align-items-center mb-2 shadow-sm';
-        item.style.opacity = opacity;
-        if (member.name === userName) item.style.borderLeft = "4px solid var(--color-4)";
+        // แปลงจากการใช้ document.createElement มาเป็นการต่อ String ล้วนๆ
+        let borderStyle = member.name === userName ? "border-left: 4px solid var(--color-4);" : "";
 
-        item.innerHTML = `
-            <div class="d-flex align-items-center gap-3">
-                <div class="bg-light border rounded-circle d-flex align-items-center justify-content-center fw-bold text-secondary" style="width: 45px; height: 45px; overflow: hidden;">
-                    ${member.img ? `<img src="${member.img}" style="width: 100%; height: 100%; object-fit: cover;">` : member.name.substring(0,1)}
+        htmlMembers += `
+            <div class="glass-card p-3 d-flex justify-content-between align-items-center mb-2 shadow-sm" style="opacity: ${opacity}; ${borderStyle}">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="bg-light border rounded-circle d-flex align-items-center justify-content-center fw-bold text-secondary" style="width: 45px; height: 45px; overflow: hidden;">
+                        ${member.img ? `<img src="${member.img}" style="width: 100%; height: 100%; object-fit: cover;">` : member.name.substring(0,1)}
+                    </div>
+                    <div>
+                        <h6 class="mb-0 fw-bold ${member.name === userName ? 'text-danger' : ''} ${!member.isActive ? 'text-decoration-line-through' : ''}">${member.name}</h6>
+                        <small class="text-muted">จ่าย: ฿${memFin.totalPaid.toLocaleString()} / ฿${memFin.totalOwed.toLocaleString()}</small>
+                    </div>
                 </div>
-                <div>
-                    <h6 class="mb-0 fw-bold ${member.name === userName ? 'text-danger' : ''} ${!member.isActive ? 'text-decoration-line-through' : ''}">${member.name}</h6>
-                    <small class="text-muted">จ่าย: ฿${memFin.totalPaid.toLocaleString()} / ฿${memFin.totalOwed.toLocaleString()}</small>
-                </div>
+                <div>${statusBadge}</div>
             </div>
-            <div>${statusBadge}</div>
         `;
-        listContainer.appendChild(item);
     });
+    
+    // 🌟 นำก้อน HTML รายชื่อเพื่อนไปใส่หน้าจอทีเดียว
+    listContainer.innerHTML = htmlMembers;
 }
 
 // =========================================================
@@ -563,7 +589,7 @@ function uploadSmartSlipToServer(data) {
         // เช็คแบบยืดหยุ่น ถ้าไม่มีสถานะ error หรือสถานะเป็น success ให้ตีว่าสำเร็จหมด
         if (!res.status || res.status === 'success' || res.status === 'ok') {
             Swal.fire('ชำระเงินสำเร็จ!', 'ระบบอัปเดตยอดคงเหลือเรียบร้อย', 'success');
-            fetchFundDataFromGoogleSheets(); 
+            syncAppData(false); 
         } else {
             Swal.fire('Error', res.message || 'เกิดข้อผิดพลาดบางอย่าง', 'error');
         }
@@ -753,7 +779,7 @@ function submitTravelData(payload) {
     .then(res => {
         if(res.status === 'success') {
             Swal.fire('สำเร็จ!', 'อัปเดตข้อมูลเดินทางเรียบร้อย', 'success');
-            fetchFundDataFromGoogleSheets(); // รีโหลดข้อมูลตารางใหม่
+            syncAppData(false); // รีโหลดข้อมูลตารางใหม่
         } else {
             Swal.fire('Error', res.message, 'error');
         }
@@ -761,3 +787,8 @@ function submitTravelData(payload) {
         Swal.fire('Error', 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้', 'error');
     });
 }
+
+// 🚀 เดินเครื่องยนต์ Super Engine ทันทีที่โหลดหน้าเว็บเสร็จ
+setTimeout(() => {
+    syncAppData(false);
+}, 500);

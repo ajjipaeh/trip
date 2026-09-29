@@ -795,3 +795,20 @@ canvas {
 .hold-to-reveal-container.is-revealing .reveal-content {
     display: flex !important; /* บังคับโชว์ */
 }
+
+/* 🌟 แอนิเมชันตอนเปิดหน้าจอใหม่ ให้สไลด์ขึ้นนุ่มๆ เหมือนแอป iOS */
+@keyframes fadeSlideUp {
+    0% { opacity: 0; transform: translateY(15px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+/* เมื่อหน้าจอไหนที่ถูกเอาคลาส d-none ออก ให้เล่นแอนิเมชันนี้ทันที */
+.page-section:not(.d-none) {
+    animation: fadeSlideUp 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+}
+
+/* ทำให้ปุ่มต่างๆ เวลากดมีรีแอคชันยุบลงนิดนึง */
+.btn:active {
+    transform: scale(0.96);
+    transition: transform 0.1s;
+}
