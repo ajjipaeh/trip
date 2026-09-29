@@ -580,7 +580,7 @@ function renderBuddyState(buddyData, isRevealed, membersData) {
             btnSuccess.disabled = true;
         } else {
             btnSuccess.classList.replace('btn-secondary', 'btn-success');
-            btnSuccess.innerHTML = '<i class="bi bi-check-circle"></i> ทำภารกิจสำเร็จแล้ว!';
+            btnSuccess.innerHTML = '<i class="bi bi-check-circle"></i> ทำภารกิจสำเร็จแล้ว ?';
             btnSuccess.disabled = false;
         }
 
