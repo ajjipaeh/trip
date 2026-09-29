@@ -58,20 +58,25 @@ function getUserFinancials(userName) {
     let totalOwed = 0; // หนี้รวม
     let breakdown = []; // แจกแจงรายบิล
     
-    // 1. คำนวณหนี้จากตาราง Expenses (หารทุกคนยกเว้น excluded)
+    // 1. คำนวณหนี้จากตาราง Expenses
+    const TRAVEL_ICONS = ['bi-car-front-fill', 'bi-fuel-pump', 'bi-signpost-split', 'bi-cup-hot', 'bi-bag-heart', 'bi-p-circle', 'bi-shop'];
+
     expensesData.forEach(exp => {
+        let isTravel = TRAVEL_ICONS.includes(exp.icon);
         let isExcluded = !myUserObj.isActive || exp.excluded.includes(userName);
         let owedAmount = 0;
         
         if (!isExcluded) {
-            // นับจำนวนคนที่หารบิลนี้ (คนที่ยังไปทริป และไม่มีชื่อใน excluded)
             let payingMembersCount = membersData.filter(m => m.isActive && !exp.excluded.includes(m.name)).length;
             if (payingMembersCount > 0) {
                 owedAmount = Math.ceil(exp.totalAmount / payingMembersCount);
             }
         }
         
-        totalOwed += owedAmount;
+        // 🔥 จุดสำคัญ: ถ้าไม่ใช่บิลค่าเดินทาง ถึงจะเอาไปบวกเป็นหนี้กองกลาง!
+        if (!isTravel) {
+            totalOwed += owedAmount;
+        }
         
         // 2. คำนวณยอดที่จ่ายไปแล้ว สำหรับบิลนี้โดยเฉพาะ (เช็คจาก Transactions)
         let paidForThisBill = transactionsData
@@ -85,6 +90,7 @@ function getUserFinancials(userName) {
             owedAmount: owedAmount,
             paidAmount: paidForThisBill,
             isExcluded: isExcluded || owedAmount === 0,
+            isTravel: isTravel, // แปะป้ายบอกว่าเป็นบิลเดินทาง
             icon: exp.icon || 'bi-receipt'
         });
     });
@@ -105,7 +111,7 @@ function calculateDebts(payersArray) {
         fin.breakdown.forEach(billFin => {
             let remaining = billFin.owedAmount - billFin.paidAmount;
             
-            if (remaining > 0 && !billFin.isExcluded) {
+            if (remaining > 0 && !billFin.isExcluded && !billFin.isTravel) {
                 debts.push({
                     billId: billFin.billId,
                     billName: billFin.billName,
@@ -161,37 +167,35 @@ function renderFundData() {
         card.style.background = 'linear-gradient(135deg, var(--color-4), #f8cdda)';
     }
 
-    // --- 2. วาดบิลรายละเอียด Breakdown ---
-    const expenseList = document.getElementById('fund-expense-list');
-    expenseList.innerHTML = '';
+    // --- 2. วาดบิลรายละเอียด Breakdown (แยกกองกลาง กับ จัดกลุ่มรถ) ---
+    const expenseListMain = document.getElementById('fund-expense-list-main');
+    const expenseListTravel = document.getElementById('fund-expense-list-travel');
+    expenseListMain.innerHTML = '';
+    expenseListTravel.innerHTML = '';
     
-    myFin.breakdown.forEach(exp => {
+    // ยอดรวมทั้งทริป (Total Trip Burn)
+    let grandTotalBurn = 0;
+
+    // 2.1 วาดบิลกองกลางหลัก
+    myFin.breakdown.filter(exp => !exp.isTravel).forEach(exp => {
+        grandTotalBurn += exp.totalAmount; // บวกเข้ายอดใช้จ่ายรวม
+        
         let statusText = "";
         let colorClass = "text-dark";
         let amountText = `฿${exp.owedAmount.toLocaleString()}`;
-
-        // คำนวณหาจำนวนคนที่หารบิลนี้จริงๆ (เพื่อเอามาโชว์ตัวเลข)
         const currentExpObj = expensesData.find(e => e.id == exp.billId);
-        let payingCount = 0;
-        if (currentExpObj) {
-            payingCount = membersData.filter(m => m.isActive && !currentExpObj.excluded.includes(m.name)).length;
-        }
+        let payingCount = currentExpObj ? membersData.filter(m => m.isActive && !currentExpObj.excluded.includes(m.name)).length : 0;
 
         if (exp.isExcluded) {
             statusText = `<span class="badge bg-light text-secondary rounded-pill">ไม่ได้หาร</span>`;
-            colorClass = "text-muted";
-            amountText = "฿0";
-        } else if (exp.paidAmount >= exp.owedAmount) {
+            colorClass = "text-muted"; amountText = "฿0";
+        } else if (exp.paidAmount >= exp.owedAmount && exp.owedAmount > 0) {
             statusText = `<span class="badge bg-success-subtle text-success rounded-pill">จ่ายแล้ว</span>`;
         } else {
-            // 🌟 เงื่อนไขใหม่: ถ้ายังจ่ายไม่ครบ ให้แสดงจำนวนคนหาร + ยอดที่ค้างอยู่
-            let remainForThisBill = exp.owedAmount - exp.paidAmount;
-            statusText = `
-                <span class="badge bg-secondary-subtle text-secondary rounded-pill">หาร ${payingCount} คน</span>
-            `;
+            statusText = `<span class="badge bg-secondary-subtle text-secondary rounded-pill">หาร ${payingCount} คน</span>`;
         }
 
-        expenseList.innerHTML += `
+        expenseListMain.innerHTML += `
             <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
                 <div class="d-flex align-items-center gap-2 ${colorClass}">
                     <i class="bi ${exp.icon} fs-5 text-muted"></i>
@@ -200,20 +204,75 @@ function renderFundData() {
                         ${statusText} <small class="text-muted">(รวม ฿${exp.totalAmount.toLocaleString()})</small>
                     </div>
                 </div>
-                <div class="${colorClass} fw-bold">
-                    ${amountText}
-                </div>
+                <div class="${colorClass} fw-bold">${amountText}</div>
             </div>
         `;
     });
 
-    expenseList.innerHTML += `
-        <div class="d-flex justify-content-between align-items-center mt-2 fw-bold text-dark">
-            <span>รวมยอดของคุณ</span>
-            <span class="text-danger fs-5">฿${myFin.totalOwed.toLocaleString()}</span>
-        </div>
-    `;
+    // 2.2 วาดบิลค่าเดินทาง (แยกกลุ่มรถ)
+    let cars = expensesData.filter(e => e.icon === 'bi-car-front-fill');
+    
+    if (cars.length === 0) {
+        expenseListTravel.innerHTML = '<div class="text-center text-muted small py-2">คุณยังไม่มีกลุ่มรถ หรือบิลค่าเดินทาง</div>';
+    } else {
+        cars.forEach(car => {
+            // หารายชื่อคนในรถ
+            let peopleInCarCount = membersData.filter(m => m.isActive && !car.excluded.includes(m.name)).length;
+            
+            // หาบิลที่อยู่ในรถคันนี้ (เช็คจาก Tag [🚗 ชื่อรถ] ที่เราแอบใส่ไว้ตอนเซฟ)
+            let carExpenses = expensesData.filter(e => e.icon !== 'bi-car-front-fill' && e.name.startsWith(`[${car.name}]`));
+            
+            let carTotal = 0;
+            let expenseItemsHTML = '';
+            
+            carExpenses.forEach(ce => {
+                carTotal += ce.totalAmount;
+                grandTotalBurn += ce.totalAmount; // บวกเข้ายอดใช้จ่ายรวม
+                
+                // สกัดชื่อบิลกับคนจ่ายออกมา (แยกด้วยเครื่องหมาย |)
+                let cleanName = ce.name.replace(`[${car.name}] `, '').split(' | ');
+                let itemName = cleanName[0];
+                let payerName = cleanName[1] ? cleanName[1] : '';
 
+                expenseItemsHTML += `
+                    <div class="d-flex justify-content-between align-items-center mt-2 small border-bottom pb-1 border-light">
+                        <div>
+                            <i class="bi ${ce.icon} text-muted me-1"></i> <span class="fw-bold">${itemName}</span><br>
+                            <span class="text-muted" style="font-size: 0.7rem;">${payerName}</span>
+                        </div>
+                        <span class="fw-bold text-dark">฿${ce.totalAmount.toLocaleString()}</span>
+                    </div>
+                `;
+            });
+            
+            let perPerson = peopleInCarCount > 0 ? Math.ceil(carTotal / peopleInCarCount) : 0;
+            let amIInThisCar = !car.excluded.includes(userName);
+            let borderHighlight = amIInThisCar ? 'border-primary border-4 shadow-sm' : 'border-light opacity-75';
+
+            expenseListTravel.innerHTML += `
+                <div class="glass-card mb-3 p-3 border-start ${borderHighlight}" style="background-color: #f8f9fa;">
+                    <h6 class="fw-bold text-primary mb-1">${car.name} <span class="badge bg-light text-dark border">ลูกเรือ ${peopleInCarCount} คน</span></h6>
+                    ${expenseItemsHTML || '<div class="small text-muted mt-2">ยังไม่มีค่าใช้จ่าย</div>'}
+                    
+                    <div class="mt-2 pt-2 text-end">
+                        <span class="fw-bold text-dark">ยอดรวมรถคันนี้: ฿${carTotal.toLocaleString()}</span><br>
+                        ${carTotal > 0 ? `<span class="badge bg-danger rounded-pill px-3 py-1 mt-1 fs-6 shadow-sm">หารตกคนละ ฿${perPerson.toLocaleString()}</span>` : ''}
+                        ${carTotal > 0 ? `<div class="small text-muted mt-1">*ไปเคลียร์เงิน โอนคืนคนจ่ายกันเองนะจ๊ะ</div>` : ''}
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    // อัปเดตยอดรวมทั้งหมด
+    document.getElementById('fund-total-owed-display').textContent = myFin.totalOwed.toLocaleString(); // หนี้กองกลางของคุณ
+    
+    // 🌟 โชว์สถิติ "ทริปนี้ละลายทรัพย์ไปแล้วรวม..." (เพิ่ม element นี้ต่อท้ายใน HTML หรือโชว์แบบนี้ไปเลย)
+    if(document.getElementById('fund-grand-total')) {
+        document.getElementById('fund-grand-total').textContent = grandTotalBurn.toLocaleString();
+    }
+
+    
     // --- 3. จัดการสิทธิ์แอดมิน ---
     const adminControls = document.getElementById('admin-controls');
     if (userName === 'แป๊ะ') adminControls.classList.remove('d-none');
@@ -526,4 +585,179 @@ window.adminManageMembers = function() {
 }
 window.adminUpdatePayment = function() {
     Swal.fire({ title: 'ดูประวัติสลิป', text: 'ข้อมูลโอนเงินจะไปกองอยู่ในชีต Transactions แบบแยกบรรทัดให้เรียบร้อย!', icon: 'success' });
+}
+
+// =========================================================
+// 🚗 ระบบจัดการกลุ่มรถ และ ค่าใช้จ่ายเดินทาง
+// =========================================================
+window.manageTravelBill = function() {
+    const myName = localStorage.getItem('tripUserName') || '';
+    
+    // 1. ตรวจสอบว่าตัวเองมีสังกัดรถแล้วหรือยัง? (หาไอคอน bi-car-front-fill ที่ไม่มีชื่อเราใน excluded)
+    let myCar = expensesData.find(e => e.icon === 'bi-car-front-fill' && !e.excluded.includes(myName));
+    
+    if (!myCar) {
+        // ================== โหมดสร้างกลุ่มรถใหม่ ==================
+        // กรองคนที่มีรถแล้วออกไป
+        let allCarExpenses = expensesData.filter(e => e.icon === 'bi-car-front-fill');
+        let peopleInCars = new Set();
+        allCarExpenses.forEach(c => membersData.forEach(m => {
+            if (!c.excluded.includes(m.name)) peopleInCars.add(m.name);
+        }));
+        
+        let availableMembers = membersData.filter(m => m.isActive && !peopleInCars.has(m.name));
+        
+        let membersHTML = availableMembers.map(m => `
+            <label class="btn btn-sm ${m.name === myName ? 'btn-primary shadow-sm' : 'btn-outline-primary'} m-1 rounded-pill" style="cursor:pointer;">
+                <input type="checkbox" class="d-none car-member-checkbox" value="${m.name}" ${m.name === myName ? 'checked' : ''}>
+                <i class="bi bi-person"></i> ${m.name}
+            </label>
+        `).join('');
+
+        Swal.fire({
+            title: '🚗 สร้างกลุ่มรถของคุณ',
+            html: `
+                <div class="text-start mb-3">
+                    <label class="small fw-bold text-muted mb-1">ตั้งชื่อรถ</label>
+                    <input type="text" id="new-car-name" class="form-control" placeholder="เช่น รถแป๊ะ, คันที่ 1">
+                </div>
+                <div class="text-start mb-2">
+                    <label class="small fw-bold text-muted mb-1">เลือกสมาชิกร่วมรถ (รวมตัวเอง)</label><br>
+                    <div class="d-flex flex-wrap">${membersHTML}</div>
+                </div>
+                <small class="text-danger">*สร้างแล้วห้ามย้ายกลุ่ม หรือสร้างซ้อนนะจ๊ะ!</small>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'สร้างกลุ่มรถ',
+            cancelButtonText: 'ยกเลิก',
+            didOpen: () => {
+                document.querySelectorAll('.car-member-checkbox').forEach(chk => {
+                    chk.addEventListener('change', function() {
+                        if(this.checked) this.parentElement.classList.replace('btn-outline-primary', 'btn-primary');
+                        else this.parentElement.classList.replace('btn-primary', 'btn-outline-primary');
+                    });
+                });
+            },
+            preConfirm: () => {
+                let carName = document.getElementById('new-car-name').value;
+                let selected = Array.from(document.querySelectorAll('.car-member-checkbox:checked')).map(c => c.value);
+                if(!carName) { Swal.showValidationMessage('ตั้งชื่อรถด้วยจ้า!'); return false; }
+                if(selected.length === 0) { Swal.showValidationMessage('เลือกสมาชิกอย่างน้อย 1 คน!'); return false; }
+                
+                // หาชื่อคนที่ "ไม่ได้ถูกเลือก" เพื่อส่งไปใส่ใน excluded ของหลังบ้าน
+                let excluded = membersData.filter(m => !selected.includes(m.name)).map(m => m.name);
+                return { action: 'createCarGroup', carName: `🚗 ${carName}`, excluded: excluded };
+            }
+        }).then(result => {
+            if(result.isConfirmed) submitTravelData(result.value);
+        });
+        
+    } else {
+        // ================== โหมดเพิ่มค่าใช้จ่ายเข้ากลุ่มรถ ==================
+        Swal.fire({
+            title: 'เพิ่มบิลค่าเดินทาง',
+            html: `
+                <h6 class="text-primary fw-bold mb-3">${myCar.name}</h6>
+                
+                <div class="text-start mb-3">
+                    <label class="small fw-bold text-muted mb-2">ประเภทค่าใช้จ่าย</label>
+                    <div class="d-flex flex-wrap gap-2 justify-content-center">
+                        <label class="btn btn-primary text-white p-2 rounded-3 travel-type-btn shadow-sm" style="width: 70px;">
+                            <input type="radio" name="travelType" value="bi-fuel-pump" class="d-none" checked>
+                            <i class="bi bi-fuel-pump fs-4 d-block"></i><small style="font-size: 0.7rem;">น้ำมัน</small>
+                        </label>
+                        <label class="btn btn-outline-secondary p-2 rounded-3 travel-type-btn" style="width: 70px;">
+                            <input type="radio" name="travelType" value="bi-signpost-split" class="d-none">
+                            <i class="bi bi-signpost-split fs-4 d-block"></i><small style="font-size: 0.7rem;">ทางด่วน</small>
+                        </label>
+                        <label class="btn btn-outline-secondary p-2 rounded-3 travel-type-btn" style="width: 70px;">
+                            <input type="radio" name="travelType" value="bi-cup-hot" class="d-none">
+                            <i class="bi bi-cup-hot fs-4 d-block"></i><small style="font-size: 0.7rem;">เครื่องดื่ม</small>
+                        </label>
+                        <label class="btn btn-outline-secondary p-2 rounded-3 travel-type-btn" style="width: 70px;">
+                            <input type="radio" name="travelType" value="bi-shop" class="d-none">
+                            <i class="bi bi-shop fs-4 d-block"></i><small style="font-size: 0.7rem;">เสบียง</small>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="text-start mb-2">
+                    <label class="small fw-bold text-muted mb-1">ยอดเงินรวม (บาท)</label>
+                    <input type="number" id="travel-bill-amount" class="form-control form-control-lg text-center fw-bold text-danger" placeholder="0">
+                </div>
+                <div class="text-start mb-2">
+                    <label class="small fw-bold text-muted mb-1">รายละเอียดเพิ่มเติม (ถ้ามี)</label>
+                    <input type="text" id="travel-bill-note" class="form-control" placeholder="เช่น ปตท. มอเตอร์เวย์">
+                </div>
+                
+                <div class="alert alert-info small text-start mt-3 mb-0 p-2 border-0 shadow-sm">
+                    <i class="bi bi-info-circle-fill"></i> ระบบจะบันทึกว่า <b>คุณ (${myName}) สำรองจ่ายไป</b> และจะเพิ่มหนี้ให้เพื่อนในรถอัติโนมัติ
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'บันทึกบิล',
+            cancelButtonText: 'ยกเลิก',
+            didOpen: () => {
+                // สคริปต์สลับสีปุ่ม Radio
+                const typeBtns = document.querySelectorAll('.travel-type-btn');
+                document.querySelectorAll('input[name="travelType"]').forEach(radio => {
+                    radio.addEventListener('change', function() {
+                        typeBtns.forEach(btn => {
+                            btn.classList.replace('btn-primary', 'btn-outline-secondary');
+                            btn.classList.remove('text-white', 'shadow-sm');
+                        });
+                        this.parentElement.classList.replace('btn-outline-secondary', 'btn-primary');
+                        this.parentElement.classList.add('text-white', 'shadow-sm');
+                    });
+                });
+            },
+            preConfirm: () => {
+                let amount = parseFloat(document.getElementById('travel-bill-amount').value);
+                let note = document.getElementById('travel-bill-note').value;
+                let icon = document.querySelector('input[name="travelType"]:checked').value;
+                
+                if(!amount || amount <= 0) { Swal.showValidationMessage('ใส่ยอดเงินด้วยจ้า!'); return false; }
+                
+                // แปลงไอคอนเป็นชื่อหัวข้อ
+                let typeName = "ค่าเดินทาง";
+                if(icon === 'bi-fuel-pump') typeName = "น้ำมัน";
+                if(icon === 'bi-signpost-split') typeName = "ทางด่วน";
+                if(icon === 'bi-cup-hot') typeName = "กาแฟ/เครื่องดื่ม";
+                if(icon === 'bi-shop') typeName = "เสบียง/มินิมาร์ท";
+                
+                let cleanCarName = myCar.name.replace('🚗 ', ''); // ลบไอคอนออกจากชื่อรถเดิม
+                let fullName = note ? `${typeName} (${note})` : `${typeName} (${cleanCarName})`;
+                
+                return { 
+                    action: 'addTravelExpense', 
+                    payer: myName, 
+                    carName: myCar.name,
+                    expenseName: fullName, 
+                    amount: amount, 
+                    icon: icon, 
+                    excluded: myCar.excluded // โยน excluded ชุดเดิมกลับไปให้หลังบ้าน
+                };
+            }
+        }).then(result => {
+            if(result.isConfirmed) submitTravelData(result.value);
+        });
+    }
+}
+
+// ฟังก์ชันส่งข้อมูลเดินทางไปที่เซิร์ฟเวอร์
+function submitTravelData(payload) {
+    Swal.fire({ title: 'กำลังบันทึกข้อมูลรถ...', html: 'รอสักครู่นะครับ 🚗💨', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    
+    fetch(API_URL, { method: 'POST', body: JSON.stringify(payload), redirect: 'follow' })
+    .then(r => r.json())
+    .then(res => {
+        if(res.status === 'success') {
+            Swal.fire('สำเร็จ!', 'อัปเดตข้อมูลเดินทางเรียบร้อย', 'success');
+            fetchFundDataFromGoogleSheets(); // รีโหลดข้อมูลตารางใหม่
+        } else {
+            Swal.fire('Error', res.message, 'error');
+        }
+    }).catch(err => {
+        Swal.fire('Error', 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้', 'error');
+    });
 }
