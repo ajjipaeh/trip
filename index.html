@@ -330,31 +330,15 @@
                             <div class="glass-card p-2">
                                 <small class="fw-bold"><i class="bi bi-person"></i> รายชื่อ</small>
                                 <!-- ใส่ชื่อ 14 คนเป็นค่าเริ่มต้น แต่ยังลบ/พิมพ์ใหม่ได้ -->
-                                <textarea id="roulette-opt-1" class="form-control mt-1 glass-input text-center" rows="6" style="font-size: 0.8rem;">ลีโอ
-ออมสิน
-ป๊อปอาย
-ไทเกอร์
-หญิง
-บิ๊ก
-ทราย
-พายุ
-อาร์
-แฟนอาร์
-ตอง
-แฟนตอง
-แป๊ะ
-ซีแพค</textarea>
+                                <textarea id="roulette-opt-1" class="form-control mt-1 glass-input text-center" rows="6" style="font-size: 0.8rem;"></textarea>
+                                <!-- minigame.js... -->
                             </div>
                         </div>
                         <div class="col-6">
                             <div class="glass-card p-2">
-                                <small class="fw-bold"><i class="bi bi-lightning-charge"></i> บทลงโทษ</small>
-                                <textarea id="roulette-opt-2" class="form-control mt-1 glass-input text-center" rows="6" style="font-size: 0.8rem;">ยกหมดแก้ว
-จ่ายค่ากาแฟ
-เต้น 1 เพลง
-รอดตัวไป
-โดนปะแป้ง
-ชงเหล้า 3 แก้ว</textarea>
+                                <small class="fw-bold"><i class="bi bi-exclamation-triangle"></i> บทลงโทษ</small>
+                                <textarea id="roulette-opt-2" class="form-control mt-1 glass-input text-center" rows="6" style="font-size: 0.8rem;"></textarea>
+                                <!-- minigame.js... -->
                             </div>
                         </div>
                     </div>
@@ -391,27 +375,31 @@
                         
                         <div class="input-group input-group-sm mb-2">
                             <span class="input-group-text bg-white fw-bold">⚀ 1</span>
-                            <input type="text" class="form-control dice-rule" data-dice="1" value="รอดตัวไป!">
+                            <input type="text" class="form-control dice-rule" data-dice="1" value="">
                         </div>
                         <div class="input-group input-group-sm mb-2">
                             <span class="input-group-text bg-white fw-bold">⚁ 2</span>
-                            <input type="text" class="form-control dice-rule" data-dice="2" value="ดื่ม 1 อึก">
+                            <input type="text" class="form-control dice-rule" data-dice="2" value="">
                         </div>
                         <div class="input-group input-group-sm mb-2">
                             <span class="input-group-text bg-white fw-bold">⚂ 3</span>
-                            <input type="text" class="form-control dice-rule" data-dice="3" value="เลือกคนดื่มแทน 1 คน">
+                            <input type="text" class="form-control dice-rule" data-dice="3" value="">
                         </div>
                         <div class="input-group input-group-sm mb-2">
                             <span class="input-group-text bg-white fw-bold">⚃ 4</span>
-                            <input type="text" class="form-control dice-rule" data-dice="4" value="เลี้ยงขนมพรุ่งนี้">
+                            <input type="text" class="form-control dice-rule" data-dice="4" value="">
                         </div>
                         <div class="input-group input-group-sm mb-2">
                             <span class="input-group-text bg-white fw-bold">⚄ 5</span>
-                            <input type="text" class="form-control dice-rule" data-dice="5" value="เล่าความลับ 1 เรื่อง">
+                            <input type="text" class="form-control dice-rule" data-dice="5" value="">
                         </div>
                         <div class="input-group input-group-sm mb-2">
                             <span class="input-group-text bg-white fw-bold">⚅ 6</span>
-                            <input type="text" class="form-control dice-rule" data-dice="6" value="หมดแก้ว!! 🍻">
+                            <input type="text" class="form-control dice-rule" data-dice="6" value="">
+                        </div>
+
+                        <div class="text-center mt-3">
+                            <button id="btn-update-dice" class="btn btn-outline-secondary w-100 rounded-pill">อัปเดตข้อมูล</button>
                         </div>
                     </div>
                 </div>

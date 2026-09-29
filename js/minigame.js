@@ -473,9 +473,6 @@ if(deck) {
 
 // ================= ระบบภารกิจลับ (Buddy Game) =================
 
-// อย่าลืมใส่ URL ของ Google Apps Script ของคุณที่นี่นะครับ!
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbw3Ad2IF2oUhRXNA6kQj2iVjnORbslQ3N2PcMWMBH6-GpC4b-ZsAdBSv43pzSd9MIGtow/exec'; 
-
 // 1. ฟังก์ชันเปิดหน้าเกมบัดดี้ (แบบดึงข้อมูลสดๆ Real-time)
 window.openBuddyGame = function() {
     document.querySelectorAll('.page-section').forEach(page => page.classList.add('d-none'));
@@ -492,7 +489,7 @@ window.openBuddyGame = function() {
     // 🌟 ดึงข้อมูลล่าสุดจาก Google Sheets ทุกครั้งที่เปิดหน้าเกม
     Swal.fire({title: 'กำลังเชื่อมต่อฐานข้อมูลลับ...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
     
-    fetch(GAS_URL) 
+    fetch(API_URL) 
     .then(response => response.json())
     .then(data => {
         Swal.close();
@@ -670,7 +667,7 @@ window.adminShuffleBuddy = function() {
     }).then((res) => {
         if(res.isConfirmed) {
             Swal.fire({title: 'กำลังสุ่ม...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
-            fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'shuffleBuddy' }) })
+            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'shuffleBuddy' }) })
             .then(() => { 
                 Swal.fire('สุ่มเสร็จแล้ว!', 'ลูกทัวร์ทุกคนสามารถดูเป้าหมายได้แล้ว', 'success')
                 .then(() => openBuddyGame()); // รีโหลดหน้าจอใหม่
@@ -686,7 +683,7 @@ window.adminRevealBuddy = function() {
     }).then((res) => {
         if(res.isConfirmed) {
             Swal.fire({title: 'กำลังส่งสัญญาณ...', didOpen: () => Swal.showLoading()});
-            fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'revealBuddy' }) })
+            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'revealBuddy' }) })
             .then(() => { 
                 Swal.fire('เฉลยแล้ว!', 'ดูรีแอคชั่นเพื่อนๆ ได้เลย 555', 'success')
                 .then(() => openBuddyGame()); // รีโหลดหน้าจอใหม่
@@ -703,7 +700,7 @@ window.markBuddySuccess = function() {
         if(res.isConfirmed) {
             Swal.fire({title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
             const myName = localStorage.getItem('tripUserName');
-            fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'updateBuddySuccess', playerName: myName }) })
+            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'updateBuddySuccess', playerName: myName }) })
             .then(() => {
                 document.getElementById('btn-buddy-success').classList.replace('btn-success', 'btn-secondary');
                 document.getElementById('btn-buddy-success').innerHTML = '<i class="bi bi-check-all"></i> บันทึกแล้ว รองัดหลักฐานตอนดึก!';
@@ -727,7 +724,7 @@ window.submitBuddyGuess = function() {
         if(res.isConfirmed) {
             Swal.fire({title: 'กำลังล็อกเป้าหมาย...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
             const myName = localStorage.getItem('tripUserName');
-            fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'submitBuddyGuess', playerName: myName, guessTarget: who, guessMission: what }) })
+            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'submitBuddyGuess', playerName: myName, guessTarget: who, guessMission: what }) })
             .then(() => {
                 document.getElementById('buddy-guess-form').classList.add('d-none');
                 document.getElementById('buddy-guess-locked').classList.remove('d-none');
@@ -748,7 +745,7 @@ window.adminResetBuddy = function() {
     }).then((res) => {
         if(res.isConfirmed) {
             Swal.fire({title: 'กำลังล้างข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
-            fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'resetBuddyGame' }) })
+            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'resetBuddyGame' }) })
             .then(() => { 
                 Swal.fire('รีเซ็ตสำเร็จ!', 'กลับสู่สถานะยังไม่เริ่มเกมแล้ว', 'success')
                 .then(() => openBuddyGame()); // รีโหลดหน้าจอใหม่ให้กลับเป็นรูปแม่กุญแจ
@@ -756,3 +753,50 @@ window.adminResetBuddy = function() {
         }
     });
 }
+
+// =========================================================
+// 🌐 ระบบโหลดข้อมูลแบบสายฟ้าแลบ (Background Pre-fetch)
+// =========================================================
+
+// ฟังก์ชันโหลดข้อมูลเกมเงียบๆ (ไม่ให้มี Pop-up โหลดมากวนใจ)
+async function loadGameData() {
+    try {
+        const res = await fetch(API_URL, { redirect: 'follow' });
+        const data = await res.json();
+        
+        let settings = data.gameSettings || {};
+        // รองรับทั้ง M ใหญ่ และ m เล็ก (เผื่อไว้)
+        let members = data.members || data.Members || []; 
+        
+        // --- อัปเดตวงล้อ ---
+        if(optInput1 && optInput2) {
+            if (settings.Roulette_Names) {
+                optInput1.value = settings.Roulette_Names;
+            } else {
+                let activeNames = members.filter(m => m.isActive).map(m => m.name);
+                if(activeNames.length > 0) optInput1.value = activeNames.join('\n');
+            }
+            
+            if (settings.Roulette_Penalties) {
+                optInput2.value = settings.Roulette_Penalties;
+            }
+            initDoubleRoulette(); // วาดวงล้อรอไว้เลย
+        }
+
+        // --- อัปเดตเต๋า ---
+        for (let i = 1; i <= 6; i++) {
+            let diceInput = document.querySelector(`.dice-rule[data-dice="${i}"]`);
+            if (diceInput && settings[`Dice_${i}`]) {
+                diceInput.value = settings[`Dice_${i}`];
+            }
+        }
+        
+        console.log("✅ โหลดกติกาเกมล่วงหน้าเสร็จสิ้น พร้อมเล่น!");
+    } catch (e) {
+        console.error("ดึงข้อมูลเกมไม่สำเร็จ", e);
+    }
+}
+
+setTimeout(() => {
+    loadGameData();
+}, 500); // หน่วงเวลา 0.5 วิ ค่อยโหลด เพื่อไม่ให้แย่งเน็ตตอนเปิดเว็บตอนแรก
