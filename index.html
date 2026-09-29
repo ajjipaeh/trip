@@ -203,6 +203,10 @@
             <!-- หน้าต่างย่อย: บัญชีกองกลาง (Trip Fund) -->
             <div id="page-fund" class="page-section d-none bg-light" style="position: absolute; top: 0; left: 0; width: 100%; height: 100vh; z-index: 1050; overflow-y: auto;">
                 
+                <div id="fund-loading-overlay" class="position-absolute top-0 start-0 w-100 h-100 bg-white bg-opacity-75 d-flex flex-column align-items-center justify-content-center" style="z-index: 1060; backdrop-filter: blur(4px);">
+                    <div class="spinner-border text-danger mb-2" role="status"></div>
+                    <span class="fw-bold text-secondary small">กำลังคำนวณบัญชีกองกลาง... 💼</span>
+                </div>
                 <div class="ios-header glass-nav d-flex align-items-center px-3 py-3 sticky-top">
                     <button class="btn btn-link text-decoration-none text-dark p-0 fw-bold" onclick="closeFundPage()">
                         <i class="bi bi-chevron-left"></i> กลับ
@@ -254,7 +258,7 @@
                         <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2">
                             <h6 class="fw-bold mb-0 text-primary"><i class="bi bi-car-front-fill"></i> บิลค่าเดินทาง</h6>
                             <button class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm" onclick="manageTravelBill()">
-                                <i class="bi bi-plus-lg"></i> จัดการรถ/บิล
+                                <i class="bi bi-plus-lg"></i>
                             </button>
                         </div>
                         <div id="fund-expense-list-travel">

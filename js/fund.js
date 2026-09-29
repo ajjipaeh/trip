@@ -69,8 +69,20 @@ window.syncAppData = async function(showLoading = false) {
 }
 
 window.openFundPage = function() {
-    document.getElementById('page-fund').classList.remove('d-none');
-    renderFundData(); // วาดหน้าจอทันที ไม่ต้องรอโหลด!
+    const pageFund = document.getElementById('page-fund');
+    pageFund.classList.remove('d-none');
+    
+    // แสดงหน้าจอโหลดทันทีก่อนวาด
+    const overlay = document.getElementById('fund-loading-overlay');
+    if (overlay) overlay.classList.remove('d-none');
+
+    if (membersData && membersData.length > 0) {
+        renderFundData();
+    } else {
+        syncAppData(false).then(() => {
+            renderFundData();
+        });
+    }
 }
 
 window.closeFundPage = function() {
@@ -249,7 +261,7 @@ function renderFundData() {
     if (myCars.length === 0) {
         expenseListTravel.innerHTML = '<div class="text-center text-muted small py-3">คุณยังไม่มีกลุ่มรถ หรือบิลค่าเดินทาง 🚗</div>';
     } else {
-        myCars.forEach(car => {
+        myCars.forEach((car, idx) => {
             let peopleInCarCount = membersData.filter(m => m.isActive && !car.excluded.includes(m.name)).length;
             let carExpenses = expensesData.filter(e => e.icon !== 'bi-car-front-fill' && e.name.startsWith(`[${car.name}]`));
             
@@ -276,15 +288,29 @@ function renderFundData() {
             let perPerson = peopleInCarCount > 0 ? Math.ceil(carTotal / peopleInCarCount) : 0;
             myTravelTotal += perPerson;
 
+            let collapseId = `carCollapse_${idx}`;
+
+            // ใช้ Bootstrap Collapse สำหรับกดพับ/ขยาย
             htmlTravel += `
-                <div class="glass-card mb-3 p-3 border-start border-primary border-4 shadow-sm" style="background-color: #f8f9fa;">
-                    <h6 class="fw-bold text-primary mb-1">${car.name} <span class="badge bg-light text-dark border">ลูกเรือ ${peopleInCarCount} คน</span></h6>
-                    ${expenseItemsHTML || '<div class="small text-muted mt-2">ยังไม่มีค่าใช้จ่าย</div>'}
+                <div class="glass-card mb-3 shadow-sm overflow-hidden" style="background-color: #f8f9fa;">
+                    <!-- ส่วนหัวการ์ด (กดเพื่อพับ/ขยาย) -->
+                    <div class="p-3 d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#${collapseId}" style="cursor: pointer;">
+                        <div>
+                            <h6 class="fw-bold text-primary mb-0"><i class="me-1"></i> ${car.name} <span class="badge bg-light text-dark border ms-1">ลูกเรือ ${peopleInCarCount} คน</span></h6>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-chevron-down text-muted small"></i>
+                        </div>
+                    </div>
                     
-                    <div class="mt-2 pt-2 text-end">
-                        <span class="fw-bold text-dark">ยอดรวมรถคันนี้: ฿${carTotal.toLocaleString()}</span><br>
-                        ${carTotal > 0 ? `<span class="badge bg-danger rounded-pill px-3 py-1 mt-1 fs-6 shadow-sm">หารตกคนละ ฿${perPerson.toLocaleString()}</span>` : ''}
-                        ${carTotal > 0 ? `<div class="small text-muted mt-1">*ไปเคลียร์เงิน โอนคืนคนจ่ายกันเองนะจ๊ะ</div>` : ''}
+                    <!-- ส่วนเนื้อหาด้านในที่จะซ่อน/แสดง -->
+                    <div id="${collapseId}" class="collapse show px-3 pb-3 border-top pt-2">
+                        ${expenseItemsHTML || '<div class="small text-muted text-center py-2">ยังไม่มีค่าใช้จ่าย</div>'}
+                        
+                        <div class="mt-2 pt-2 text-end border-top">
+                            <span class="badge bg-danger rounded-pill px-3 py-1 mt-1 fs-6 shadow-sm">หารตกคนละ ฿${perPerson.toLocaleString()}</span>
+                            <div class="small text-muted mt-1">*ไปเคลียร์เงิน โอนคืนคนจ่ายกันเองนะจ๊ะ</div>
+                        </div>
                     </div>
                 </div>
             `;
@@ -345,6 +371,10 @@ function renderFundData() {
     
     // 🌟 นำก้อน HTML รายชื่อเพื่อนไปใส่หน้าจอทีเดียว
     listContainer.innerHTML = htmlMembers;
+
+    // 🔥 ซ่อนหน้าจอโหลด/เบลอ เมื่อวาดหน้าจอเสร็จสมบูรณ์
+    const overlay = document.getElementById('fund-loading-overlay');
+    if (overlay) overlay.classList.add('d-none');
 }
 
 // =========================================================
