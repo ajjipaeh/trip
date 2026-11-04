@@ -104,17 +104,20 @@ function getUserFinancials(userName) {
 
     expensesData.forEach(exp => {
         let isTravel = TRAVEL_ICONS.includes(exp.icon);
-        let isExcluded = !myUserObj.isActive || exp.excluded.includes(userName);
+        
+        // 🌟 ลบการเช็ค isActive ออก! สนใจแค่ว่ามีชื่อใน excluded ไหม
+        let isExcluded = exp.excluded.includes(userName);
         let owedAmount = 0;
         
         if (!isExcluded) {
-            let payingMembersCount = membersData.filter(m => m.isActive && !exp.excluded.includes(m.name)).length;
+            // 🌟 นับเฉพาะคนที่ไม่ได้ถูก exclude (ไม่แคร์ isActive ปัจจุบัน)
+            let payingMembersCount = membersData.filter(m => !exp.excluded.includes(m.name)).length;
             if (payingMembersCount > 0) {
                 owedAmount = Math.ceil(exp.totalAmount / payingMembersCount);
             }
         }
         
-        // 🔥 จุดสำคัญ: ถ้าไม่ใช่บิลค่าเดินทาง ถึงจะเอาไปบวกเป็นหนี้กองกลาง!
+        // ถ้าไม่ใช่บิลค่าเดินทาง ถึงจะเอาไปบวกเป็นหนี้กองกลาง
         if (!isTravel) {
             totalOwed += owedAmount;
         }
@@ -219,13 +222,17 @@ function renderFundData() {
     let htmlMain = ""; 
     
     myFin.breakdown.filter(exp => !exp.isTravel).forEach(exp => {
-        grandTotalBurn += exp.totalAmount; // บวกเข้ายอดใช้จ่ายรวม
+        if (exp.icon !== 'bi-shield-check') {
+            grandTotalBurn += exp.totalAmount; 
+        }
         
         let statusText = "";
         let colorClass = "text-dark";
         let amountText = `฿${exp.owedAmount.toLocaleString()}`;
         const currentExpObj = expensesData.find(e => e.id == exp.billId);
-        let payingCount = currentExpObj ? membersData.filter(m => m.isActive && !currentExpObj.excluded.includes(m.name)).length : 0;
+        
+        // 🌟 เปลี่ยนการนับคนหารให้ตรงกับลอจิกใหม่
+        let payingCount = currentExpObj ? membersData.filter(m => !currentExpObj.excluded.includes(m.name)).length : 0;
 
         if (exp.isExcluded) {
             statusText = `<span class="badge bg-light text-secondary rounded-pill">ไม่ได้หาร</span>`;
@@ -236,12 +243,15 @@ function renderFundData() {
             statusText = `<span class="badge bg-secondary-subtle text-secondary rounded-pill">หาร ${payingCount} คน</span>`;
         }
 
+        // 🌟 เพิ่มปุ่มดินสอแก้ไข (เห็นเฉพาะแป๊ะ)
+        let editBtn = userName === 'แป๊ะ' ? `<i class="bi bi-pencil-square text-primary ms-2 p-1" style="cursor:pointer;" onclick="openMainBillModal(${exp.billId})"></i>` : '';
+
         htmlMain += `
             <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
                 <div class="d-flex align-items-center gap-2 ${colorClass}">
                     <i class="bi ${exp.icon} fs-5 text-muted"></i>
                     <div>
-                        <p class="mb-0 small fw-bold">${exp.billName}</p>
+                        <p class="mb-0 small fw-bold">${exp.billName} ${editBtn}</p>
                         ${statusText} <small class="text-muted">(รวม ฿${exp.totalAmount.toLocaleString()})</small>
                     </div>
                 </div>
@@ -249,8 +259,14 @@ function renderFundData() {
             </div>
         `;
     });
-    // 🌟 นำก้อน HTML หลักไปใส่หน้าจอทีเดียว
     expenseListMain.innerHTML = htmlMain;
+
+    // 🌟 โชว์ปุ่มเพิ่มบิลหลัก ถ้าเป็นแอดมินแป๊ะ
+    const btnAddMain = document.getElementById('btn-add-main-bill');
+    if (btnAddMain) {
+        if (userName === 'แป๊ะ') btnAddMain.classList.remove('d-none');
+        else btnAddMain.classList.add('d-none');
+    }
 
     // 🌟 2.2 วาดบิลค่าเดินทาง (แยกกลุ่มรถ) โชว์เฉพาะรถตัวเอง! (ใช้ DOM Batching)
     let allCars = expensesData.filter(e => e.icon === 'bi-car-front-fill');
@@ -328,12 +344,32 @@ function renderFundData() {
     if (userName === 'แป๊ะ') adminControls.classList.remove('d-none');
     else adminControls.classList.add('d-none');
 
-    // 🌟 --- 4. แสดงสถานะเพื่อนๆ ทุกคนในทริป (ใช้ DOM Batching) ---
+    // 🌟 --- 4. แสดงสถานะเพื่อนๆ ทุกคนในทริป (ใช้ DOM Batching + เรียงลำดับสายเปย์) ---
     const listContainer = document.getElementById('fund-members-list');
     let htmlMembers = "";
 
-    membersData.forEach(member => {
-        let memFin = getUserFinancials(member.name);
+    // 1. ดึงข้อมูลการเงินของทุกคนมาแพ็กคู่กับชื่อก่อน (เพื่อความรวดเร็วในการจัดเรียง)
+    let membersWithFin = membersData.map(member => {
+        return {
+            info: member,
+            fin: getUserFinancials(member.name)
+        };
+    });
+
+    // 2. จัดเรียงข้อมูล (Sort)
+    membersWithFin.sort((a, b) => {
+        // กฎข้อที่ 1: คนไปทริป (True) ต้องอยู่บน คนยกเลิกทริป (False) ต้องอยู่ล่างสุด
+        if (a.info.isActive !== b.info.isActive) {
+            return a.info.isActive ? -1 : 1;
+        }
+        // กฎข้อที่ 2: ถ้าสถานะไปทริปเหมือนกัน ให้เรียงตาม "ยอดเงินที่จ่ายแล้ว" จากมากไปน้อย
+        return b.fin.totalPaid - a.fin.totalPaid;
+    });
+
+    // 3. วนลูปวาดหน้าจอจากรายชื่อที่จัดอันดับเรียบร้อยแล้ว
+    membersWithFin.forEach(item => {
+        let member = item.info;
+        let memFin = item.fin;
         let memRemain = memFin.totalOwed - memFin.totalPaid;
         
         let statusBadge = "";
@@ -350,7 +386,6 @@ function renderFundData() {
             statusBadge = `<span class="badge bg-warning-subtle text-warning-emphasis rounded-pill">ค้าง ฿${memRemain.toLocaleString()}</span>`;
         }
 
-        // แปลงจากการใช้ document.createElement มาเป็นการต่อ String ล้วนๆ
         let borderStyle = member.name === userName ? "border-left: 4px solid var(--color-4);" : "";
 
         htmlMembers += `
@@ -822,3 +857,124 @@ function submitTravelData(payload) {
 setTimeout(() => {
     syncAppData(false);
 }, 500);
+
+// =========================================================
+// 📝 ระบบเพิ่ม/แก้ไข บิลกองกลางหลัก (Admin Only)
+// =========================================================
+window.openMainBillModal = function(billId = null) {
+    let isEdit = billId !== null;
+    let expObj = isEdit ? expensesData.find(e => e.id === billId) : null;
+    
+    // ตั้งค่าเริ่มต้นของฟอร์ม
+    let defaultName = isEdit ? expObj.name : "";
+    let defaultAmount = isEdit ? expObj.totalAmount : "";
+    let defaultIcon = isEdit ? expObj.icon : "bi-house";
+    
+    // สร้างปุ่มรายชื่อ 14 คน
+    let membersHTML = membersData.map(m => {
+        // ค่าเริ่มต้น: ถ้าสร้างใหม่ให้ติ๊กเฉพาะคนไปทริป ถ้าแก้บิลเก่าให้ติ๊กตามที่เคยหาร
+        let isChecked = isEdit ? !expObj.excluded.includes(m.name) : m.isActive;
+        let btnClass = isChecked ? 'btn-primary shadow-sm' : 'btn-outline-primary';
+        
+        return `
+            <label class="btn btn-sm ${btnClass} m-1 rounded-pill" style="cursor:pointer;">
+                <input type="checkbox" class="d-none main-member-checkbox" value="${m.name}" ${isChecked ? 'checked' : ''}>
+                <i class="bi bi-person"></i> ${m.name}
+            </label>
+        `;
+    }).join('');
+
+    Swal.fire({
+        title: isEdit ? '✏️ แก้ไขบิลกองกลาง' : '📝 เพิ่มบิลกองกลาง',
+        html: `
+            <div class="text-start mb-3">
+                <label class="small fw-bold text-muted mb-2">ประเภท / ไอคอน</label>
+                <div class="d-flex flex-wrap gap-2 justify-content-center">
+                    ${renderIconRadio('bi-house', 'ที่พัก', defaultIcon)}
+                    ${renderIconRadio('bi-shop', 'อาหาร', defaultIcon)}
+                    ${renderIconRadio('bi-ticket-perforated-fill', 'กิจกรรม', defaultIcon)}
+                    ${renderIconRadio('bi-cup-straw', 'เครื่องดื่ม', defaultIcon)}
+                    ${renderIconRadio('bi-cart3', 'ซื้อของ', defaultIcon)}
+                    ${renderIconRadio('bi-shield-check', 'เงินประกัน', defaultIcon)}
+                    ${renderIconRadio('bi-file-check', 'อื่นๆ', defaultIcon)}
+                </div>
+            </div>
+            <div class="text-start mb-2">
+                <label class="small fw-bold text-muted mb-1">ชื่อรายการ (บิล)</label>
+                <input type="text" id="main-bill-name" class="form-control fw-bold text-dark" placeholder="เช่น มัดจำบ้าน, ค่าหมูกระทะ" value="${defaultName}">
+            </div>
+            <div class="text-start mb-3">
+                <label class="small fw-bold text-muted mb-1">ยอดเงินรวมทั้งหมด (บาท)</label>
+                <input type="number" id="main-bill-amount" class="form-control form-control-lg text-center fw-bold text-success" placeholder="0" value="${defaultAmount}">
+            </div>
+            <div class="text-start mb-2 bg-light p-2 rounded-3 border">
+                <label class="small fw-bold text-muted mb-1"><i class="bi bi-people-fill"></i> ใครต้องหารบิลนี้บ้าง?</label><br>
+                <div class="d-flex flex-wrap">${membersHTML}</div>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'บันทึกบิล',
+        cancelButtonText: 'ยกเลิก',
+        didOpen: () => {
+            // ระบบสลับสีปุ่มไอคอน
+            const typeBtns = document.querySelectorAll('.main-type-btn');
+            document.querySelectorAll('input[name="mainType"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    typeBtns.forEach(btn => {
+                        btn.classList.replace('btn-primary', 'btn-outline-secondary');
+                        btn.classList.remove('text-white', 'shadow-sm');
+                    });
+                    this.parentElement.classList.replace('btn-outline-secondary', 'btn-primary');
+                    this.parentElement.classList.add('text-white', 'shadow-sm');
+                });
+            });
+
+            // ระบบสลับสีปุ่มคนหาร
+            document.querySelectorAll('.main-member-checkbox').forEach(chk => {
+                chk.addEventListener('change', function() {
+                    if(this.checked) this.parentElement.classList.replace('btn-outline-primary', 'btn-primary');
+                    else this.parentElement.classList.replace('btn-primary', 'btn-outline-primary');
+                });
+            });
+        },
+        preConfirm: () => {
+            let name = document.getElementById('main-bill-name').value;
+            let amount = parseFloat(document.getElementById('main-bill-amount').value);
+            let icon = document.querySelector('input[name="mainType"]:checked').value;
+            let selected = Array.from(document.querySelectorAll('.main-member-checkbox:checked')).map(c => c.value);
+            
+            if(!name) { Swal.showValidationMessage('กรอกชื่อรายการด้วยครับ!'); return false; }
+            if(isNaN(amount) || amount < 0) { Swal.showValidationMessage('ใส่ยอดเงินให้ถูกต้องด้วยครับ! (ใส่ 0 ได้ถ้าได้คืนแล้ว)'); return false; }
+            if(selected.length === 0) { Swal.showValidationMessage('ต้องมีคนหารอย่างน้อย 1 คนครับ!'); return false; }
+            
+            // หาคนที่ไม่ถูกติ๊ก เพื่อจับลง excluded
+            let excluded = membersData.filter(m => !selected.includes(m.name)).map(m => m.name);
+            
+            return { action: 'saveMainExpense', billId: billId, name: name, amount: amount, icon: icon, excluded: excluded };
+        }
+    }).then(result => {
+        if(result.isConfirmed) {
+            Swal.fire({ title: 'กำลังบันทึกข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            fetch(API_URL, { method: 'POST', body: JSON.stringify(result.value), redirect: 'follow' })
+            .then(r => r.json())
+            .then(res => {
+                if(res.status === 'success') {
+                    Swal.fire('สำเร็จ!', 'อัปเดตบิลกองกลางเรียบร้อย', 'success');
+                    syncAppData(false); // โหลดข้อมูลใหม่ทั้งหมด
+                }
+            });
+        }
+    });
+}
+
+// ตัวช่วยสร้างปุ่ม Radio ไอคอน
+function renderIconRadio(iconClass, label, defaultIcon) {
+    let isChecked = iconClass === defaultIcon;
+    let btnClass = isChecked ? 'btn-primary text-white shadow-sm' : 'btn-outline-secondary';
+    return `
+        <label class="btn ${btnClass} p-2 rounded-3 main-type-btn" style="width: 70px;">
+            <input type="radio" name="mainType" value="${iconClass}" class="d-none" ${isChecked ? 'checked' : ''}>
+            <i class="bi ${iconClass} fs-4 d-block"></i><small style="font-size: 0.7rem;">${label}</small>
+        </label>
+    `;
+}
