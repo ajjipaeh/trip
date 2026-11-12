@@ -18,52 +18,50 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw3Ad2IF2oUhRXNA6kQj2iV
 // 🚀 THE SUPER ENGINE: ระบบซิงค์ข้อมูลรอบเดียวใช้ได้ทั้งเว็บ
 // =========================================================
 window.syncAppData = async function(showLoading = false) {
-    if(showLoading) {
-        Swal.fire({ title: 'กำลังอัปเดตข้อมูลล่าสุด...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+    if (!currentTripId) return; // ดักไว้เผื่อยังไม่ได้เลือกทริป
+    if (showLoading) {
+        Swal.fire({ title: 'กำลังดึงข้อมูลทริปล่าสุด...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     }
     
     try {
-        const response = await fetch(API_URL, { redirect: 'follow' });
-        const data = await response.json();
-        
-        // --- 1. อัปเดตข้อมูลฝั่งบัญชีกองกลาง ---
-        membersData = data.members || [];
-        expensesData = data.expenses || [];
-        transactionsData = data.transactions || [];
-        
-        fundMetaData.lastUpdated = new Date().toLocaleDateString('th-TH', { 
-            year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+        // 🌟 เปลี่ยนมายิง POST พร้อมส่ง tripId
+        const payload = { action: 'getTripData', tripId: currentTripId };
+        const response = await fetch(API_URL, { 
+            method: 'POST', 
+            body: JSON.stringify(payload),
+            redirect: 'follow' 
         });
+        const res = await response.json();
         
-        if (typeof renderFundData === 'function') renderFundData(); // สั่งวาดบัญชีรอไว้เลย
+        if (res.status === 'success') {
+            const data = res.data;
+            membersData = data.members || [];
+            expensesData = data.expenses || [];
+            transactionsData = data.transactions || [];
+            
+            fundMetaData.lastUpdated = new Date().toLocaleDateString('th-TH', { 
+                year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+            });
+            
+            if (typeof renderFundData === 'function') renderFundData(); 
 
-        // --- 2. อัปเดตข้อมูลฝั่งมินิเกม ---
-        let settings = data.gameSettings || {};
-        
-        const optInput1 = document.getElementById("roulette-opt-1");
-        const optInput2 = document.getElementById("roulette-opt-2");
-        if(optInput1 && optInput2) {
-            if (settings.Roulette_Names) {
-                optInput1.value = settings.Roulette_Names;
-            } else {
-                let activeNames = membersData.filter(m => m.isActive).map(m => m.name);
-                if(activeNames.length > 0) optInput1.value = activeNames.join('\n');
+            // อัปเดตข้อมูลมินิเกม
+            let settings = data.gameSettings || {};
+            const optInput1 = document.getElementById("roulette-opt-1");
+            const optInput2 = document.getElementById("roulette-opt-2");
+            if (optInput1 && optInput2) {
+                optInput1.value = settings.Roulette_Names || membersData.filter(m => m.isActive).map(m => m.name).join('\n');
+                optInput2.value = settings.Roulette_Penalties || '';
+                if (typeof initDoubleRoulette === 'function') initDoubleRoulette(); 
             }
-            if (settings.Roulette_Penalties) optInput2.value = settings.Roulette_Penalties;
-            if (typeof initDoubleRoulette === 'function') initDoubleRoulette(); // สั่งวาดวงล้อรอไว้เลย
-        }
-
-        for (let i = 1; i <= 6; i++) {
-            let diceInput = document.querySelector(`.dice-rule[data-dice="${i}"]`);
-            if (diceInput && settings[`Dice_${i}`]) {
-                diceInput.value = settings[`Dice_${i}`];
+            for (let i = 1; i <= 6; i++) {
+                let diceInput = document.querySelector(`.dice-rule[data-dice="${i}"]`);
+                if (diceInput && settings[`Dice_${i}`]) diceInput.value = settings[`Dice_${i}`];
             }
         }
-
-        if(showLoading) Swal.close();
-        console.log("⚡ ซิงค์ข้อมูล Global Cache สำเร็จ! เว็บลื่นปรื้ดแล้ว");
+        if (showLoading) Swal.close();
     } catch (error) {
-        console.error("เกิดข้อผิดพลาดในการดึงข้อมูล:", error);
+        console.error(error);
         if(showLoading) Swal.fire('แจ้งเตือน', 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้', 'error');
     }
 }
@@ -173,8 +171,14 @@ function calculateDebts(payersArray) {
 // 🎨 ฟังก์ชันวาดหน้าจอหลักกองกลาง (Render UI)
 // =========================================================
 function renderFundData() {
-    const userName = localStorage.getItem('tripUserName') || 'Guest';
-    const myUserObj = membersData.find(m => m.name === userName) || { isActive: true };
+    // 🌟 ดึงข้อมูลจากระบบ Login แทน localStorage เดิม
+    const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
+    const userName = currentUser.name || 'Guest'; 
+    const myUserObj = membersData.find(m => m.name === userName) || { isActive: true, role: 'Member' };
+    
+    // 🌟 ตรวจสอบสิทธิ์: เป็น SuperAdmin หรือ เป็น Admin ประจำทริปนี้
+    const isAdmin = currentUser.role === 'SuperAdmin' || myUserObj.role === 'Admin';
+    
     const myFin = getUserFinancials(userName); 
     
     document.getElementById('fund-last-update').textContent = fundMetaData.lastUpdated;
@@ -244,7 +248,7 @@ function renderFundData() {
         }
 
         // 🌟 เพิ่มปุ่มดินสอแก้ไข (เห็นเฉพาะแป๊ะ)
-        let editBtn = userName === 'แป๊ะ' ? `<i class="bi bi-pencil-square text-primary ms-2 p-1" style="cursor:pointer;" onclick="openMainBillModal(${exp.billId})"></i>` : '';
+        let editBtn = isAdmin ? `<i class="bi bi-pencil-square text-primary ms-2 p-1" style="cursor:pointer;" onclick="openMainBillModal(${exp.billId})"></i>` : '';
 
         htmlMain += `
             <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
@@ -264,7 +268,7 @@ function renderFundData() {
     // 🌟 โชว์ปุ่มเพิ่มบิลหลัก ถ้าเป็นแอดมินแป๊ะ
     const btnAddMain = document.getElementById('btn-add-main-bill');
     if (btnAddMain) {
-        if (userName === 'แป๊ะ') btnAddMain.classList.remove('d-none');
+        if (isAdmin) btnAddMain.classList.remove('d-none');
         else btnAddMain.classList.add('d-none');
     }
 
@@ -341,7 +345,7 @@ function renderFundData() {
     
     // --- 3. จัดการสิทธิ์แอดมิน ---
     const adminControls = document.getElementById('admin-controls');
-    if (userName === 'แป๊ะ') adminControls.classList.remove('d-none');
+    if (isAdmin) adminControls.classList.remove('d-none');
     else adminControls.classList.add('d-none');
 
     // 🌟 --- 4. แสดงสถานะเพื่อนๆ ทุกคนในทริป (ใช้ DOM Batching + เรียงลำดับสายเปย์) ---
@@ -630,6 +634,7 @@ function uploadSmartSlipToServer(data) {
     
     const payload = {
         action: 'uploadSlipSmart',
+        tripId: currentTripId,
         transferBy: data.transferBy,
         allocations: data.allocations,
         base64: data.base64,
@@ -737,7 +742,7 @@ window.manageTravelBill = function() {
                 
                 // หาชื่อคนที่ "ไม่ได้ถูกเลือก" เพื่อส่งไปใส่ใน excluded ของหลังบ้าน
                 let excluded = membersData.filter(m => !selected.includes(m.name)).map(m => m.name);
-                return { action: 'createCarGroup', carName: `🚗 ${carName}`, excluded: excluded };
+                return { action: 'createCarGroup', tripId: currentTripId, carName: `🚗 ${carName}`, excluded: excluded };
             }
         }).then(result => {
             if(result.isConfirmed) submitTravelData(result.value);
@@ -821,6 +826,7 @@ window.manageTravelBill = function() {
                 
                 return { 
                     action: 'addTravelExpense', 
+                    tripId: currentTripId,
                     payer: myName, 
                     carName: myCar.name,
                     expenseName: fullName, 
@@ -950,7 +956,7 @@ window.openMainBillModal = function(billId = null) {
             // หาคนที่ไม่ถูกติ๊ก เพื่อจับลง excluded
             let excluded = membersData.filter(m => !selected.includes(m.name)).map(m => m.name);
             
-            return { action: 'saveMainExpense', billId: billId, name: name, amount: amount, icon: icon, excluded: excluded };
+            return { action: 'saveMainExpense', tripId: currentTripId, billId: billId, name: name, amount: amount, icon: icon, excluded: excluded };
         }
     }).then(result => {
         if(result.isConfirmed) {

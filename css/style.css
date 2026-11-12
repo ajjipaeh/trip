@@ -183,11 +183,12 @@ body {
     flex-grow: 1;
     overflow-y: scroll;
     scroll-snap-type: y mandatory; /* บังคับให้เลื่อนแล้วดูดเข้า Snap */
-    padding: 10px 20px 50vh 20px; /* เว้นที่ด้านล่างให้การ์ดสุดท้ายเลื่อนมาตรงกลางได้ */
+    padding: 35vh 20px 35vh 20px;
     
     /* ซ่อน Scrollbar ให้ดูสะอาดตา */
     -ms-overflow-style: none;
     scrollbar-width: none;
+    scroll-behavior: smooth;
 }
 .vertical-carousel::-webkit-scrollbar {
     display: none;
@@ -273,7 +274,7 @@ body {
 /* ป้ายกำกับสถานะ (มุมขวาบน) */
 .badge-status {
     position: absolute;
-    top: 15px; right: 15px;
+    top: 15px; left: 15px;
     z-index: 4;
     padding: 6px 14px;
     border-radius: 20px;

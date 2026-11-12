@@ -20,19 +20,40 @@
 </head>
 <body>
 
-    <!-- 1. Splash Screen -->
-    <div id="splash-screen" class="splash-container d-flex flex-column justify-content-center align-items-center text-center">
-        <div class="glass-card p-5 mx-4">
+    <!-- 1. หน้าจอ Login -->
+    <div id="splash-screen" class="splash-container d-flex flex-column justify-content-center align-items-center text-center d-none" style="height: 100vh;">
+        <div class="glass-card p-5 mx-4 w-100" style="max-width: 400px;">
             <h1 class="display-1 mb-3">✈️</h1>
-            <h2 class="mb-2 fw-bold text-dark">เตรียมตัวให้พร้อม</h2>
-            <p class="text-muted mb-4">สำหรับทริปครั้งนี้ ไปเที่ยวกันเถอะ!</p>
+            <h2 class="mb-2 fw-bold text-dark">Trip Planner</h2>
+            <p class="text-muted mb-4">เข้าสู่ระบบเพื่อจัดการทริป</p>
             
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control glass-input" id="login-username" placeholder="Username">
+                <label for="login-username">ชื่อผู้ใช้ (Username)</label>
+            </div>
             <div class="form-floating mb-4">
-                <input type="text" class="form-control glass-input" id="userNameInput" placeholder="ใส่ชื่อของคุณ">
-                <label for="userNameInput">ชื่อของคุณ</label>
+                <input type="password" class="form-control glass-input" id="login-password" placeholder="Password">
+                <label for="login-password">รหัสผ่าน (Password)</label>
             </div>
             
-            <button id="btnStart" class="btn btn-ios w-100 fw-bold py-3">เริ่มกันเลย</button>
+            <button id="btnLogin" class="btn btn-ios w-100 fw-bold py-3 shadow-sm" onclick="handleLogin()">เข้าสู่ระบบ</button>
+        </div>
+    </div>
+
+    <!-- 1.5 หน้าจอเลือกทริป (Trip Hub) -->
+    <div id="trip-hub-screen" class="d-none bg-light" style="height: 100vh; overflow-y: auto;">
+        <div class="ios-header glass-nav d-flex align-items-center px-4 py-4 sticky-top shadow-sm">
+            <h4 class="mb-0 fw-bold text-dark">🏕️ ทริปของคุณ</h4>
+            <div class="ms-auto d-flex gap-2">
+                <!-- ปุ่มสร้างทริป (ซ่อนไว้ให้เฉพาะ SuperAdmin) -->
+                <button class="btn btn-sm btn-primary rounded-pill fw-bold d-none" id="btn-create-trip" onclick="openCreateTripModal()">+ สร้างทริป</button>
+                <button class="btn btn-sm btn-outline-danger rounded-pill fw-bold" onclick="handleLogout()">ออกจากระบบ</button>
+            </div>
+        </div>
+        <div class="container pt-4 pb-5">
+            <div id="trip-list-container" class="row g-3">
+                <!-- การ์ดทริปจะถูกสร้างด้วย JS มาแทรกตรงนี้ -->
+            </div>
         </div>
     </div>
 
@@ -58,7 +79,7 @@
 
                 <!-- ปุ่มออกระบบ ซ่อนเนียนๆ มุมขวาบน -->
                 <div class="position-absolute top-0 end-0 p-4" style="z-index: 10;">
-                    <button id="btnLogout" class="btn btn-link text-dark opacity-50 p-0 shadow-none"><i class="bi bi-box-arrow-right fs-3"></i></button>
+                    <button id="btnLogout" class="btn btn-link text-dark opacity-50 p-0 shadow-none" onclick="handleLogout()"><i class="bi bi-box-arrow-right fs-3"></i></button>
                 </div>
 
                 <!-- พื้นที่ตรงกลางจอ (Focus Area) -->
@@ -68,7 +89,7 @@
                     <p class="mb-0 text-dark opacity-75 fw-bold" id="welcome-text" style="letter-spacing: 1px; font-size: 0.9rem;">สวัสดี</p>
                     
                     <!-- ชื่อทริปใหญ่เบิ้ม (Hero Typography) -->
-                    <h1 class="display-1 fw-bold mb-5" style="letter-spacing: 2px; color: var(--color-4); text-shadow: 0 10px 20px rgba(255,255,255,0.8); font-size: 4rem;">เขาใหญ่</h1>
+                    <h1 id="dashboard-trip-name" class="display-1 fw-bold mb-5" style="letter-spacing: 2px; color: var(--color-4); text-shadow: 0 10px 20px rgba(255,255,255,0.8); font-size: 4rem;"></h1>
 
                     <!-- เค้าท์ดาวน์แบบ ไร้กรอบ (Minimal Digital Clock) -->
                     <div class="d-flex justify-content-center align-items-center gap-2 mb-5 w-100 px-1">
@@ -99,7 +120,7 @@
                     <!-- ป้ายวันที่แบบ Glass Pill เล็กๆ น่ารักๆ -->
                     <div class="glass-card rounded-pill px-4 py-2 shadow-sm d-inline-flex align-items-center gap-2 border-0" style="background: rgba(255,255,255,0.3);">
                         <i class="bi bi-calendar2-heart text-danger"></i>
-                        <span class="fw-bold text-dark small">7 พฤศจิกายน 2569</span>
+                        <span id="dashboard-trip-date" class="fw-bold text-dark small"></span>
                     </div>
                 </div>
             </div>
@@ -635,13 +656,26 @@
 
                 <div class="container pb-5 mt-4">
                     <div class="row g-3 mb-4">
-                        <!-- ข้อมูลด่วน -->
+                        <!-- 🏠 ที่พักของเรา (Accommodation Widget) -->
                         <div class="col-12">
-                            <div class="glass-card p-3 text-start">
-                                <h6 class="fw-bold border-bottom pb-2 mb-3"><i class="bi bi-pin-angle-fill text-danger"></i> ข้อมูลนัดหมายด่วน</h6>
-                                <p class="mb-2 small"><i class="bi bi-clock"></i> <strong>เวลา:</strong> 07:00 น. (ล้อหมุน)</p>
-                                <p class="mb-2 small"><i class="bi bi-car-front-fill"></i> <strong>รถ:</strong> ทั้งหมด 5 คัน</p>
-                                <p class="mb-0 small"><i class="bi bi-cloud-sun-fill text-warning"></i> <strong>อากาศ:</strong> แดดจัด 32°C ☀️</p>
+                            <div class="glass-card p-3 text-start position-relative">
+                                <!-- ปุ่มแก้ไข (ซ่อนไว้ก่อน จะโชว์ด้วย JS เฉพาะ Admin/SuperAdmin) -->
+                                <button id="btn-edit-acc" class="btn btn-sm btn-light position-absolute top-0 end-0 m-2 shadow-sm rounded-circle d-none align-items-center justify-content-center" 
+                                        style="z-index: 10; width:35px; height:35px;" onclick="openEditAccModal()">
+                                    <i class="bi bi-pencil-fill text-primary"></i>
+                                </button>
+                                
+                                <h6 class="fw-bold border-bottom pb-2 mb-3">
+                                    <i class="bi bi-house-door-fill text-primary"></i> ที่พักหลักในทริปนี้
+                                </h6>
+                                
+                                <!-- พื้นที่สำหรับแสดงข้อมูลที่พัก (JS จะเอาข้อมูลมาวาดตรงนี้) -->
+                                <div id="acc-content">
+                                    <div class="text-center text-muted my-4">
+                                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                        <small class="ms-2">กำลังโหลดข้อมูลที่พัก...</small>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         
@@ -654,15 +688,19 @@
                             </button>
                         </div>
                     </div>
-                    <!-- ปุ่มสลับทีม (Smart Tabs) สไตล์ iOS -->
-                    <div class="ios-segmented-control mb-3">
-                        <input type="radio" name="teamSelect" id="tab-teamKKC" value="teamKKC" checked>
-                        <label for="tab-teamKKC" class="segment-label">🦖 ทีมขอนแก่น</label>
-                        
-                        <input type="radio" name="teamSelect" id="tab-teamRYG" value="teamRYG">
-                        <label for="tab-teamRYG" class="segment-label">🌊 ทีมระยอง</label>
-                        
-                        <div class="segment-highlight"></div>
+                    
+                    <!-- 👥 ระบบจัดการทีมและสลับทีม (Dynamic Team Tabs) -->
+                    <div class="d-flex justify-content-between align-items-center mb-2 px-2 mt-4">
+                        <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-people-fill text-primary"></i> กลุ่มเดินทาง (Teams)</h6>
+                        <!-- ปุ่มจัดการทีม (จะโชว์เฉพาะ Admin/SuperAdmin) -->
+                        <button id="btn-manage-teams" class="btn btn-sm btn-outline-primary rounded-pill d-none" onclick="openManageTeamsModal()">
+                            <i class="bi bi-gear-fill"></i> จัดการทีม
+                        </button>
+                    </div>
+                    
+                    <div class="ios-segmented-control mb-3" id="dynamic-team-tabs">
+                        <!-- JS จะสร้างปุ่มสลับทีมมาแทรกตรงนี้อัตโนมัติ -->
+                        <div class="text-center w-100 py-2 text-muted small">กำลังโหลดข้อมูลทีม...</div>
                     </div>
 
                     <!-- แถบแจ้งเตือนสถานะ Live (ซ่อนไว้ก่อน จะโชว์เมื่อมีการเช็คอิน) -->
@@ -717,7 +755,13 @@
                     </div>
 
                     <!-- Timeline เส้นทาง -->
-                    <h6 class="fw-bold mb-3 px-2">📍 เส้นทางและจุดแวะพัก</h6>
+                    <div class="d-flex justify-content-between align-items-center mb-3 px-2 border-top pt-3 mt-2">
+                        <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-geo-alt-fill text-danger"></i> เส้นทางและจุดแวะพัก</h6>
+                        <!-- ปุ่มจัดการเส้นทาง (โชว์เฉพาะคนในทีมนั้นๆ หรือ Admin) -->
+                        <button id="btn-manage-route" class="btn btn-sm btn-outline-danger rounded-pill d-none" onclick="openManageRouteModal()">
+                            <i class="bi bi-pencil-square"></i> จัดการเส้นทาง
+                        </button>
+                    </div>
                     <div id="timeline-container" class="timeline-wrapper px-2">
                         <!-- JS จะสร้าง Timeline มาใส่ตรงนี้ -->
                     </div>

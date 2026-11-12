@@ -205,6 +205,7 @@ if (btnUpdateDouble) {
         
         const payload = {
             action: 'updateGameSettings',
+            tripId: currentTripId,
             settings: {
                 Roulette_Names: optInput1.value,
                 Roulette_Penalties: optInput2.value
@@ -293,6 +294,7 @@ if (btnUpdateDice) {
         
         const payload = {
             action: 'updateGameSettings',
+            tripId: currentTripId,
             settings: diceSettings
         };
         
@@ -725,7 +727,7 @@ window.adminShuffleBuddy = function() {
     }).then((res) => {
         if(res.isConfirmed) {
             Swal.fire({title: 'กำลังสุ่ม...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
-            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'shuffleBuddy' }) })
+            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'shuffleBuddy', tripId: currentTripId }) })
             .then(() => { 
                 Swal.fire('สุ่มเสร็จแล้ว!', 'ลูกทัวร์ทุกคนสามารถดูเป้าหมายได้แล้ว', 'success')
                 .then(() => openBuddyGame()); // รีโหลดหน้าจอใหม่
@@ -741,7 +743,7 @@ window.adminRevealBuddy = function() {
     }).then((res) => {
         if(res.isConfirmed) {
             Swal.fire({title: 'กำลังส่งสัญญาณ...', didOpen: () => Swal.showLoading()});
-            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'revealBuddy' }) })
+            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'revealBuddy', tripId: currentTripId }) })
             .then(() => { 
                 Swal.fire('เฉลยแล้ว!', 'ดูรีแอคชั่นเพื่อนๆ ได้เลย 555', 'success')
                 .then(() => openBuddyGame()); // รีโหลดหน้าจอใหม่
@@ -758,7 +760,7 @@ window.markBuddySuccess = function() {
         if(res.isConfirmed) {
             Swal.fire({title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
             const myName = localStorage.getItem('tripUserName');
-            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'updateBuddySuccess', playerName: myName }) })
+            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'updateBuddySuccess', tripId: currentTripId, playerName: myName }) })
             .then(() => {
                 document.getElementById('btn-buddy-success').classList.replace('btn-success', 'btn-secondary');
                 document.getElementById('btn-buddy-success').innerHTML = '<i class="bi bi-check-all"></i> บันทึกแล้ว รองัดหลักฐานตอนดึก!';
@@ -782,7 +784,7 @@ window.submitBuddyGuess = function() {
         if(res.isConfirmed) {
             Swal.fire({title: 'กำลังล็อกเป้าหมาย...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
             const myName = localStorage.getItem('tripUserName');
-            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'submitBuddyGuess', playerName: myName, guessTarget: who, guessMission: what }) })
+            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'submitBuddyGuess', tripId: currentTripId, playerName: myName, guessTarget: who, guessMission: what }) })
             .then(() => {
                 document.getElementById('buddy-guess-form').classList.add('d-none');
                 document.getElementById('buddy-guess-locked').classList.remove('d-none');
@@ -803,7 +805,7 @@ window.adminResetBuddy = function() {
     }).then((res) => {
         if(res.isConfirmed) {
             Swal.fire({title: 'กำลังล้างข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
-            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'resetBuddyGame' }) })
+            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'resetBuddyGame', tripId: currentTripId }) })
             .then(() => { 
                 Swal.fire('รีเซ็ตสำเร็จ!', 'กลับสู่สถานะยังไม่เริ่มเกมแล้ว', 'success')
                 .then(() => openBuddyGame()); // รีโหลดหน้าจอใหม่ให้กลับเป็นรูปแม่กุญแจ
