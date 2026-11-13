@@ -350,6 +350,14 @@ function renderFundData() {
 
     // 🌟 --- 4. แสดงสถานะเพื่อนๆ ทุกคนในทริป (ใช้ DOM Batching + เรียงลำดับสายเปย์) ---
     const listContainer = document.getElementById('fund-members-list');
+    const titleEl = document.getElementById('fund-members-title');
+    if (titleEl) {
+        // นับคนที่ isActive = true (คนไปทริปจริง)
+        let activeCount = membersData.filter(m => m.isActive).length;
+        // เปลี่ยนข้อความให้โชว์ว่าไปกี่คน (จากทั้งหมดกี่คนในทริป)
+        titleEl.innerHTML = `📋 สถานะสมาชิก (${activeCount} คน)`;
+    }
+
     let htmlMembers = "";
 
     // 1. ดึงข้อมูลการเงินของทุกคนมาแพ็กคู่กับชื่อก่อน (เพื่อความรวดเร็วในการจัดเรียง)
