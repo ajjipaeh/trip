@@ -81,37 +81,67 @@ window.renderTripCarousel = function(allTrips, activeTripId) {
         carouselContainer.appendChild(card);
 
         // จัดการเมื่อกดการ์ด
-        card.addEventListener('click', () => {
+        card.addEventListener('click', async () => {
             if (card.classList.contains('active-card')) {
                 
-                // 🌟 1. ทริปปัจจุบัน และ ทริปอนาคต (!isPast) -> พาเข้าหน้ารายละเอียดทริป
+                // 🌟 1. ทริปปัจจุบัน และ ทริปอนาคต (!isPast)
                 if (!isPast) { 
+                    // บันทึกความจำลงเครื่อง
                     localStorage.setItem('currentTripId', trip.tripId);
-                    localStorage.setItem('tripUserName', trip.tripName); // เก็บชื่อทริปไว้เผื่อใช้
+                    localStorage.setItem('currentTripName', trip.tripName);
+                    localStorage.setItem('currentTripEndDate', trip.endDate);
+
+                    // 1. โชว์หน้าจอโหลดค้างไว้ก่อนเลย ไม่ให้ผู้ใช้สับสน
+                    Swal.fire({
+                        title: 'กำลังซิงค์ข้อมูล...',
+                        html: `ดาวน์โหลดข้อมูลทริป <b>${trip.tripName}</b>`,
+                        allowOutsideClick: false,
+                        didOpen: () => Swal.showLoading()
+                    });
+
+                    // 2. สั่งโหลดข้อมูล "แผนที่" และ "กองกลาง" พร้อมกัน และรอจนกว่าจะเสร็จ (await)
+                    try {
+                        let loadTasks = [];
+                        if (typeof window.syncDataFromServer === 'function') {
+                            loadTasks.push(window.syncDataFromServer());
+                        }
+                        if (typeof window.syncAppData === 'function') {
+                            loadTasks.push(window.syncAppData(false)); // ซิงค์กองกลางล่วงหน้าไปด้วยเลย
+                        }
+                        await Promise.all(loadTasks); // 🌟 ตรงนี้คือหัวใจสำคัญ! ระบบจะหยุดรอจนกว่าข้อมูลจะดึงเสร็จ
+                    } catch (e) {
+                        console.error('Preload Error:', e);
+                    }
+
+                    // 3. โหลดเสร็จแล้ว ค่อยสลับหน้าจอ (ไม่เกิดอาการหน้าจอกระตุกหรือข้อมูลเก่าโผล่)
+                    // ซ่อนทุกหน้าทิ้งให้หมดก่อน
+                    document.querySelectorAll('.page-section').forEach(page => page.classList.add('d-none'));
                     
+                    const detailsPage = document.getElementById('page-trip-details');
+                    const fundPage = document.getElementById('page-fund');
+                    let activeId = '';
+                    
+                    if (detailsPage) {
+                        detailsPage.classList.remove('d-none');
+                        activeId = 'page-trip-details';
+                    } else if (fundPage) {
+                        fundPage.classList.remove('d-none');
+                        activeId = 'page-fund';
+                    }
+                    
+                    // 🌟 เอาโค้ดแก้บั๊ก Active กลับมาใส่ตรงนี้แบบเป๊ะๆ!
+                    document.querySelectorAll('.nav-link').forEach(nav => nav.classList.remove('active'));
+                    const targetNav = document.querySelector(`.nav-link[data-target="${activeId}"]`);
+                    if (targetNav) targetNav.classList.add('active');
+                    
+                    window.scrollTo(0, 0); 
+                    
+                    // เปลี่ยนป๊อปอัปโหลด เป็นคำว่า พร้อมลุย!
                     Swal.fire({
                         title: 'พร้อมลุย!',
-                        text: `กำลังเปิดแพลน: ${trip.tripName}`,
                         icon: 'success',
                         showConfirmButton: false,
-                        timer: 1200
-                    }).then(() => {
-                        // ซ่อนทุกหน้าทิ้งให้หมดก่อน
-                        document.querySelectorAll('.page-section').forEach(page => page.classList.add('d-none'));
-                        
-                        // เปิดหน้าเป้าหมาย
-                        const detailsPage = document.getElementById('page-trip-details');
-                        if (detailsPage) detailsPage.classList.remove('d-none');
-                        
-                        // 🌟 แก้บั๊กเมนูด้านล่าง: รีเซ็ต Active ทั้งหมด แล้วไปสว่างที่ปุ่มแผนที่
-                        document.querySelectorAll('.nav-link').forEach(nav => nav.classList.remove('active'));
-                        const targetNav = document.querySelector('.nav-link[data-target="page-trip-details"]');
-                        if (targetNav) targetNav.classList.add('active');
-
-                        window.scrollTo(0, 0); 
-                        if (typeof window.syncDataFromServer === 'function') {
-                            window.syncDataFromServer();
-                        }
+                        timer: 1000
                     });
 
                 // 🌟 2. ทริปที่จบไปแล้ว (isPast) -> ดึงข้อมูลมาโชว์สรุปสถิติ

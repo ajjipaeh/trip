@@ -18,14 +18,16 @@ const API_URL = "https://script.google.com/macros/s/AKfycbw3Ad2IF2oUhRXNA6kQj2iV
 // 🚀 THE SUPER ENGINE: ระบบซิงค์ข้อมูลรอบเดียวใช้ได้ทั้งเว็บ
 // =========================================================
 window.syncAppData = async function(showLoading = false) {
-    if (!currentTripId) return; // ดักไว้เผื่อยังไม่ได้เลือกทริป
+    // 🌟 1. ดึงรหัสทริปสดๆ จากเครื่องเสมอ (ไม่ใช้ตัวแปรเก่า)
+    const tripId = localStorage.getItem('currentTripId'); 
+    if (!tripId) return; 
+
     if (showLoading) {
         Swal.fire({ title: 'กำลังดึงข้อมูลทริปล่าสุด...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     }
     
     try {
-        // 🌟 เปลี่ยนมายิง POST พร้อมส่ง tripId
-        const payload = { action: 'getTripData', tripId: currentTripId };
+        const payload = { action: 'getTripData', tripId: tripId }; // 🌟 ใช้รหัสทริปล่าสุด
         const response = await fetch(API_URL, { 
             method: 'POST', 
             body: JSON.stringify(payload),
@@ -70,17 +72,11 @@ window.openFundPage = function() {
     const pageFund = document.getElementById('page-fund');
     pageFund.classList.remove('d-none');
     
-    // แสดงหน้าจอโหลดทันทีก่อนวาด
     const overlay = document.getElementById('fund-loading-overlay');
     if (overlay) overlay.classList.remove('d-none');
 
-    if (membersData && membersData.length > 0) {
-        renderFundData();
-    } else {
-        syncAppData(false).then(() => {
-            renderFundData();
-        });
-    }
+    // 🌟 2. บังคับโหลดข้อมูลใหม่ "ทุกครั้ง" ที่เปิดหน้ากองกลาง (ลบเงื่อนไขเช็คข้อมูลเก่าทิ้งไปเลย)
+    syncAppData(false);
 }
 
 window.closeFundPage = function() {
@@ -183,6 +179,10 @@ function renderFundData() {
     
     document.getElementById('fund-last-update').textContent = fundMetaData.lastUpdated;
     document.getElementById('fund-due-date').textContent = fundMetaData.nextDueDate;
+
+    if (typeof window.updateFundDeadline === 'function') {
+        window.updateFundDeadline();
+    }
 
     const remain = myFin.totalOwed - myFin.totalPaid;
     let progress = myFin.totalOwed > 0 ? (myFin.totalPaid / myFin.totalOwed) * 100 : 0;
@@ -635,7 +635,7 @@ function uploadSmartSlipToServer(data) {
     
     const payload = {
         action: 'uploadSlipSmart',
-        tripId: currentTripId,
+        tripId: localStorage.getItem('currentTripId'),
         transferBy: data.transferBy,
         allocations: data.allocations,
         base64: data.base64,
@@ -744,7 +744,7 @@ window.manageTravelBill = function() {
                 
                 // หาชื่อคนที่ "ไม่ได้ถูกเลือก" เพื่อส่งไปใส่ใน excluded ของหลังบ้าน
                 let excluded = membersData.filter(m => !selected.includes(m.name)).map(m => m.name);
-                return { action: 'createCarGroup', tripId: currentTripId, carName: `🚗 ${carName}`, excluded: excluded };
+                return { action: 'createCarGroup', tripId: localStorage.getItem('currentTripId'), carName: `🚗 ${carName}`, excluded: excluded };
             }
         }).then(result => {
             if(result.isConfirmed) submitTravelData(result.value);
@@ -828,7 +828,7 @@ window.manageTravelBill = function() {
                 
                 return { 
                     action: 'addTravelExpense', 
-                    tripId: currentTripId,
+                    tripId: localStorage.getItem('currentTripId'),
                     payer: myName, 
                     carName: myCar.name,
                     expenseName: fullName, 
@@ -958,7 +958,7 @@ window.openMainBillModal = function(billId = null) {
             // หาคนที่ไม่ถูกติ๊ก เพื่อจับลง excluded
             let excluded = membersData.filter(m => !selected.includes(m.name)).map(m => m.name);
             
-            return { action: 'saveMainExpense', tripId: currentTripId, billId: billId, name: name, amount: amount, icon: icon, excluded: excluded };
+            return { action: 'saveMainExpense', tripId: localStorage.getItem('currentTripId'), billId: billId, name: name, amount: amount, icon: icon, excluded: excluded };
         }
     }).then(result => {
         if(result.isConfirmed) {
@@ -985,4 +985,28 @@ function renderIconRadio(iconClass, label, defaultIcon) {
             <i class="bi ${iconClass} fs-4 d-block"></i><small style="font-size: 0.7rem;">${label}</small>
         </label>
     `;
+}
+
+// ==========================================
+// 📅 ฟังก์ชันคำนวณเดดไลน์กองกลาง (จบทริป + 2 วัน)
+// ==========================================
+window.updateFundDeadline = function() {
+    let endDateStr = localStorage.getItem('currentTripEndDate');
+    if (!endDateStr) return; // ถ้าไม่มีข้อมูลให้ข้ามไป
+
+    // 1. แปลงข้อความเป็นวันที่ แล้วบวกเพิ่ม 2 วัน
+    let deadlineDate = new Date(endDateStr);
+    deadlineDate.setDate(deadlineDate.getDate() + 2); 
+
+    // 2. แปลงเป็นเดือนภาษาไทยแบบย่อ
+    const thaiMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+    let d = deadlineDate.getDate();
+    let m = thaiMonths[deadlineDate.getMonth()];
+    let y = (deadlineDate.getFullYear() + 543).toString().slice(-2); // เอาแค่ปี พ.ศ. 2 หลักท้าย (เช่น 69)
+
+    // 3. หยอดกลับเข้าไปใน HTML
+    let deadlineEl = document.getElementById('fund-due-date');
+    if (deadlineEl) {
+        deadlineEl.innerText = `${d} ${m} ${y}`;
+    }
 }

@@ -10,9 +10,9 @@ let syncInterval = null;
 // ================= ระบบ Sync Server (ดึงข้อมูล 5 นาที) =================
 window.syncDataFromServer = function() {
     const tripId = localStorage.getItem('currentTripId');
-    if (!tripId) return;
+    if (!tripId) return Promise.resolve();
 
-    fetch(API_URL, {
+    return fetch(API_URL, {
         method: 'POST',
         body: JSON.stringify({ action: 'getTripData', tripId: tripId }),
         redirect: 'follow'
@@ -708,7 +708,7 @@ window.renderTeamTabs = function(teams, members) {
     // ถ้าไม่มีทีมถูกสร้างไว้เลย ให้บังคับสร้าง "ทีมรวม"
     let displayTeams = teams.length > 0 ? teams : [{
         teamId: 'teamGlobal',
-        teamName: '🌍 ทีมรวม (ทั้งหมด)',
+        teamName: 'All',
         members: members.map(m => m.userId)
     }];
 
