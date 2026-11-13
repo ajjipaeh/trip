@@ -115,11 +115,12 @@ window.openTripDetails = function(tripId) {
     window.scrollTo(0, 0);
     document.getElementById('detail-cover').style.backgroundImage = `url('${currentActiveTrip.image}')`;
     
-    const userName = localStorage.getItem('tripUserName') || '';
+    const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
+    const myName = currentUser.name || '';
 
     const resetZone = document.getElementById('admin-reset-zone');
     if(resetZone) {
-        if(userName === 'แป๊ะ') resetZone.classList.remove('d-none');
+        if(myName === 'แป๊ะ') resetZone.classList.remove('d-none');
         else resetZone.classList.add('d-none');
     }
 

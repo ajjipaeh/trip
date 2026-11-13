@@ -439,7 +439,8 @@ window.notifyPayment = function() {
 };
 
 function openSmartAllocationUI(base64, file) {
-    const myName = localStorage.getItem('tripUserName') || '';
+    const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
+    const myName = currentUser.name || '';
     window.__smartAllocations = []; 
     
     let payersHTML = membersData.filter(m => m.isActive).map(m => `
@@ -687,7 +688,8 @@ window.adminUpdatePayment = function() {
 // 🚗 ระบบจัดการกลุ่มรถ และ ค่าใช้จ่ายเดินทาง
 // =========================================================
 window.manageTravelBill = function() {
-    const myName = localStorage.getItem('tripUserName') || '';
+    const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
+    const myName = currentUser.name || '';
     
     // 1. ตรวจสอบว่าตัวเองมีสังกัดรถแล้วหรือยัง? (หาไอคอน bi-car-front-fill ที่ไม่มีชื่อเราใน excluded)
     let myCar = expensesData.find(e => e.icon === 'bi-car-front-fill' && !e.excluded.includes(myName));

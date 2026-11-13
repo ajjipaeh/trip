@@ -98,26 +98,16 @@ window.renderTripCarousel = function(allTrips, activeTripId) {
                     }).then(() => {
                         // ซ่อนทุกหน้าทิ้งให้หมดก่อน
                         document.querySelectorAll('.page-section').forEach(page => page.classList.add('d-none'));
-                        // หาหน้าเป้าหมาย
+                        
+                        // เปิดหน้าเป้าหมาย
                         const detailsPage = document.getElementById('page-trip-details');
-                        const fundPage = document.getElementById('page-fund');
-                        let activeId = '';
+                        if (detailsPage) detailsPage.classList.remove('d-none');
                         
-                        if (detailsPage) {
-                            detailsPage.classList.remove('d-none');
-                            activeId = 'page-trip-details';
-                        } else if (fundPage) {
-                            fundPage.classList.remove('d-none');
-                            activeId = 'page-fund';
-                        }
-                        
-                        // สลับสีปุ่มเมนูด้านล่าง
-                        document.querySelectorAll('.nav-item').forEach(nav => {
-                            nav.classList.remove('active');
-                            if (nav.getAttribute('data-target') === activeId) {
-                                nav.classList.add('active');
-                            }
-                        });
+                        // 🌟 แก้บั๊กเมนูด้านล่าง: รีเซ็ต Active ทั้งหมด แล้วไปสว่างที่ปุ่มแผนที่
+                        document.querySelectorAll('.nav-link').forEach(nav => nav.classList.remove('active'));
+                        const targetNav = document.querySelector('.nav-link[data-target="page-trip-details"]');
+                        if (targetNav) targetNav.classList.add('active');
+
                         window.scrollTo(0, 0); 
                         if (typeof window.syncDataFromServer === 'function') {
                             window.syncDataFromServer();

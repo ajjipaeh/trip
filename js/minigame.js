@@ -203,22 +203,25 @@ if (btnUpdateDouble) {
     btnUpdateDouble.addEventListener("click", () => {
         Swal.fire({ title: 'กำลังบันทึกข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         
+        const tripId = localStorage.getItem('currentTripId'); 
+        
         const payload = {
             action: 'updateGameSettings',
-            tripId: currentTripId,
+            tripId: tripId,
             settings: {
                 Roulette_Names: optInput1.value,
                 Roulette_Penalties: optInput2.value
             }
         };
         
-        fetch(GAME_API_URL, { method: 'POST', body: JSON.stringify(payload), redirect: 'follow' })
+        // 🔥 เปลี่ยนมาใช้ API_URL ของระบบหลักแทน GAME_API_URL
+        fetch(API_URL, { method: 'POST', body: JSON.stringify(payload), redirect: 'follow' })
         .then(r => r.json())
         .then(() => {
             initDoubleRoulette(); // รีเฟรชวงล้อบนหน้าจอตัวเอง
             
-            // เรียก Super Engine เพื่อดึงข้อมูลอัปเดตให้ทุกหน้าเว็บ
-            if(typeof syncAppData === 'function') syncAppData(false);
+            // เรียก Super Engine เพื่อดึงข้อมูลอัปเดตล่าสุด
+            if(typeof window.syncDataFromServer === 'function') window.syncDataFromServer();
             
             Swal.fire({ icon: 'success', title: 'เซฟลงฐานข้อมูลแล้ว!', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
         })
@@ -281,28 +284,32 @@ if (btnRollDice) {
 }
 
 // 🌟 ปุ่มบันทึกกติกาเต๋าลง Google Sheets
-const btnUpdateDice = document.getElementById('btn-update-dice');
+const btnUpdateDice = document.getElementById('btn-update-dice'); // ประกาศตัวแปรให้ชัดเจน (แก้บั๊ก is not defined)
 if (btnUpdateDice) {
     btnUpdateDice.addEventListener("click", () => {
         Swal.fire({ title: 'กำลังบันทึกกติกาเต๋า...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         
         let diceSettings = {};
         for (let i = 1; i <= 6; i++) {
-            let val = document.querySelector(`.dice-rule[data-dice="${i}"]`).value;
-            diceSettings[`Dice_${i}`] = val;
+            let ruleInput = document.querySelector(`.dice-rule[data-dice="${i}"]`);
+            if (ruleInput) {
+                diceSettings[`Dice_${i}`] = ruleInput.value;
+            }
         }
+        
+        const tripId = localStorage.getItem('currentTripId');
         
         const payload = {
             action: 'updateGameSettings',
-            tripId: currentTripId,
+            tripId: tripId,
             settings: diceSettings
         };
         
-        fetch(GAME_API_URL, { method: 'POST', body: JSON.stringify(payload), redirect: 'follow' })
+        // 🔥 เปลี่ยนมาใช้ API_URL ของระบบหลัก
+        fetch(API_URL, { method: 'POST', body: JSON.stringify(payload), redirect: 'follow' })
         .then(r => r.json())
         .then(() => {
-            // เรียก Super Engine เพื่ออัปเดตข้อมูลให้ทุกคน
-            if(typeof syncAppData === 'function') syncAppData(false);
+            if(typeof window.syncDataFromServer === 'function') window.syncDataFromServer();
             
             Swal.fire({ icon: 'success', title: 'อัปเดตกติกาเต๋าแล้ว!', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
         })
@@ -533,7 +540,7 @@ if(deck) {
 
 // ================= ระบบภารกิจลับ (Buddy Game) =================
 
-// 1. ฟังก์ชันเปิดหน้าเกมบัดดี้ (แบบดึงข้อมูลสดๆ Real-time)
+// 1. ฟังก์ชันเปิดหน้าเกมบัดดี้ (รองรับระบบ Multi-Trip V2)
 window.openBuddyGame = function() {
     document.querySelectorAll('.page-section').forEach(page => page.classList.add('d-none'));
     const bottomNav = document.querySelector('.bottom-nav');
@@ -541,20 +548,30 @@ window.openBuddyGame = function() {
     
     document.getElementById('subpage-buddy').classList.remove('d-none');
     
-    // โชว์ Tutorial ถ้าเพิ่งเข้าครั้งแรก
     if (!localStorage.getItem('buddyTutSkipped')) {
         showBuddyTutorial();
     }
 
-    // 🌟 ดึงข้อมูลล่าสุดจาก Google Sheets ทุกครั้งที่เปิดหน้าเกม
+    const tripId = localStorage.getItem('currentTripId');
+    if(!tripId) return;
+
     Swal.fire({title: 'กำลังเชื่อมต่อฐานข้อมูลลับ...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
     
-    fetch(API_URL) 
+    // 🌟 ยิง API แบบ POST และส่ง action 'getTripData' ไปดึงข้อมูลของทริปนี้
+    fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'getTripData', tripId: tripId }),
+        redirect: 'follow'
+    })
     .then(response => response.json())
-    .then(data => {
+    .then(res => {
         Swal.close();
-        // ส่งข้อมูลที่ได้ไปแสดงผลบนหน้าจอ
-        renderBuddyState(data.buddyData, data.buddyRevealed, data.members);
+        if(res.status === 'success') {
+            // ส่งข้อมูลบัดดี้และสมาชิกไปวาดหน้าจอ
+            renderBuddyState(res.data.buddyData, res.data.buddyRevealed, res.data.members);
+        } else {
+            Swal.fire('Error', res.message, 'error');
+        }
     })
     .catch(error => {
         Swal.fire('Error', 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้', 'error');
@@ -588,7 +605,8 @@ window.showBuddyTutorial = function(force = false) {
 
 // 3. ฟังก์ชันควบคุมการเปลี่ยนหน้าจอเกม (3 สถานะ)
 function renderBuddyState(buddyData, isRevealed, membersData) {
-    const myName = localStorage.getItem('tripUserName') || '';
+    const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
+    const myName = currentUser.name || '';
     
     // 1. จัดการสิทธิ์แอดมินโซน (แป๊ะ)
     if (myName === 'แป๊ะ') document.getElementById('buddy-admin-zone').classList.remove('d-none');
@@ -727,10 +745,11 @@ window.adminShuffleBuddy = function() {
     }).then((res) => {
         if(res.isConfirmed) {
             Swal.fire({title: 'กำลังสุ่ม...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
-            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'shuffleBuddy', tripId: currentTripId }) })
+            const tripId = localStorage.getItem('currentTripId');
+            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'shuffleBuddy', tripId: tripId }) })
             .then(() => { 
                 Swal.fire('สุ่มเสร็จแล้ว!', 'ลูกทัวร์ทุกคนสามารถดูเป้าหมายได้แล้ว', 'success')
-                .then(() => openBuddyGame()); // รีโหลดหน้าจอใหม่
+                .then(() => openBuddyGame()); 
             });
         }
     });
@@ -743,10 +762,11 @@ window.adminRevealBuddy = function() {
     }).then((res) => {
         if(res.isConfirmed) {
             Swal.fire({title: 'กำลังส่งสัญญาณ...', didOpen: () => Swal.showLoading()});
-            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'revealBuddy', tripId: currentTripId }) })
+            const tripId = localStorage.getItem('currentTripId');
+            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'revealBuddy', tripId: tripId }) })
             .then(() => { 
                 Swal.fire('เฉลยแล้ว!', 'ดูรีแอคชั่นเพื่อนๆ ได้เลย 555', 'success')
-                .then(() => openBuddyGame()); // รีโหลดหน้าจอใหม่
+                .then(() => openBuddyGame());
             });
         }
     });
@@ -759,8 +779,10 @@ window.markBuddySuccess = function() {
     }).then((res) => {
         if(res.isConfirmed) {
             Swal.fire({title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
-            const myName = localStorage.getItem('tripUserName');
-            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'updateBuddySuccess', tripId: currentTripId, playerName: myName }) })
+            const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
+            const myName = currentUser.name || '';
+            const tripId = localStorage.getItem('currentTripId');
+            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'updateBuddySuccess', tripId: tripId, playerName: myName }) })
             .then(() => {
                 document.getElementById('btn-buddy-success').classList.replace('btn-success', 'btn-secondary');
                 document.getElementById('btn-buddy-success').innerHTML = '<i class="bi bi-check-all"></i> บันทึกแล้ว รองัดหลักฐานตอนดึก!';
@@ -783,8 +805,10 @@ window.submitBuddyGuess = function() {
     }).then((res) => {
         if(res.isConfirmed) {
             Swal.fire({title: 'กำลังล็อกเป้าหมาย...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
-            const myName = localStorage.getItem('tripUserName');
-            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'submitBuddyGuess', tripId: currentTripId, playerName: myName, guessTarget: who, guessMission: what }) })
+            const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
+            const myName = currentUser.name || '';
+            const tripId = localStorage.getItem('currentTripId');
+            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'submitBuddyGuess', tripId: tripId, playerName: myName, guessTarget: who, guessMission: what }) })
             .then(() => {
                 document.getElementById('buddy-guess-form').classList.add('d-none');
                 document.getElementById('buddy-guess-locked').classList.remove('d-none');
@@ -794,21 +818,18 @@ window.submitBuddyGuess = function() {
     });
 }
 
-// ฟังก์ชันล้างกระดานเกมบัดดี้ (กลับไปหน้าจอแม่กุญแจ)
 window.adminResetBuddy = function() {
     Swal.fire({
-        title: 'ล้างข้อมูลเกม?', 
-        text: 'จะล้างบัดดี้ ภารกิจ และการทายผลทั้งหมด กลับไปสู่สถานะยังไม่เริ่มเกม (เอาไว้เทส)',
-        icon: 'warning', 
-        showCancelButton: true, 
-        confirmButtonText: 'ล้างเลย!'
+        title: 'ล้างข้อมูลเกม?', text: 'จะล้างบัดดี้ ภารกิจ และการทายผลทั้งหมด',
+        icon: 'warning', showCancelButton: true, confirmButtonText: 'ล้างเลย!'
     }).then((res) => {
         if(res.isConfirmed) {
             Swal.fire({title: 'กำลังล้างข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
-            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'resetBuddyGame', tripId: currentTripId }) })
+            const tripId = localStorage.getItem('currentTripId');
+            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'resetBuddyGame', tripId: tripId }) })
             .then(() => { 
                 Swal.fire('รีเซ็ตสำเร็จ!', 'กลับสู่สถานะยังไม่เริ่มเกมแล้ว', 'success')
-                .then(() => openBuddyGame()); // รีโหลดหน้าจอใหม่ให้กลับเป็นรูปแม่กุญแจ
+                .then(() => openBuddyGame());
             });
         }
     });
